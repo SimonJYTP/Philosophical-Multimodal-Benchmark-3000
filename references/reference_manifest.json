@@ -1,0 +1,132 @@
+{
+  "files": [
+    {
+      "path": "references/HL_Dataset/README_official.md",
+      "sha256": "da07326c3b9c0aa92ff64dd7eec91187a1bc28ef38c088533ca6de32904313c3",
+      "size_bytes": 6200
+    },
+    {
+      "path": "references/HL_Dataset/LICENSE",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "size_bytes": 11558
+    },
+    {
+      "path": "references/benchmark_papers.bib",
+      "sha256": "37ac8338fd451d43e5645c9f24d552cf4102e97940e905de3258b87245bf8677",
+      "size_bytes": 1731
+    },
+    {
+      "path": "references/HSSBench/README_CN.md",
+      "sha256": "177aa67f1b11a2851ac299e80b09ebf5fab36003dfe90d31a610137248750a7b",
+      "size_bytes": 1530
+    },
+    {
+      "path": "references/HSSBench/README_official.md",
+      "sha256": "d0123cb0ad5c055b7928246f28078e66eea12bbc528fc76591efa03c31ea682a",
+      "size_bytes": 4925
+    },
+    {
+      "path": "references/HSSBench/HSSBench_arXiv_2506.03922.pdf",
+      "sha256": "8d3393b9f87b0b7ef82373de1c6bd76222478a2f6269b99426d1e14d4f516252",
+      "size_bytes": 41596329
+    },
+    {
+      "path": "references/MM-MoralBench/README_official.md",
+      "sha256": "cd2db30650a2ae90e92c63b03109963dfe0dbf37669db6743d1d917facdf2f48",
+      "size_bytes": 3530
+    },
+    {
+      "path": "references/MM-MoralBench/MM-MoralBench_arXiv_2412.20718.pdf",
+      "sha256": "e4aae4e360e2526da52ce4ad6e8352cacec19cf70441ef8685a6ec6e7dfe21ef",
+      "size_bytes": 4593812
+    },
+    {
+      "path": "references/ValueGround/README_CN.md",
+      "sha256": "ff8c2d8345ae0a5c6da4153d5cb4bfdd68a8cb6a474d6e32a1fbdab20d3a50c4",
+      "size_bytes": 1289
+    },
+    {
+      "path": "references/ValueGround/README_official.md",
+      "sha256": "5e344f91403e641b26b8a230c039ec98c731ae9f7636785921b365b1fda5f214",
+      "size_bytes": 166
+    },
+    {
+      "path": "references/ValueGround/ValueGround_arXiv_2604.06484.pdf",
+      "sha256": "0aadd77f5337652ddad4d91df8e24f75ef2b3ced9d15f03bc0c846df9cc9f47d",
+      "size_bytes": 3459502
+    },
+    {
+      "path": "references/VULCA-Bench/README_CN.md",
+      "sha256": "d6440837421f74422568ad99a914c2498d8bf0566f26d5785361cc073d3551a8",
+      "size_bytes": 2127
+    },
+    {
+      "path": "references/VULCA-Bench/README_official.md",
+      "sha256": "3a87288995b0f398f58f570bd4d42c6890da662b95ee2230c0c2f84b63213507",
+      "size_bytes": 3934
+    },
+    {
+      "path": "references/VULCA-Bench/LICENSE",
+      "sha256": "06682de5557b997bc165f327616d86dd57123ee2e747e25bc553cefb16e98ad2",
+      "size_bytes": 1316
+    },
+    {
+      "path": "references/VULCA-Bench/IMAGE_RIGHTS.md",
+      "sha256": "7391a9973e0d11a5eaf1b98a1cb7016229a0c756e744452ad0bcb4fbd64411ff",
+      "size_bytes": 1331
+    },
+    {
+      "path": "references/VULCA-Bench/RELEASES.md",
+      "sha256": "0d61066a0bde76bf02d623f8058de2de7296e9c14717205343c0558e0b1bbd39",
+      "size_bytes": 2132
+    },
+    {
+      "path": "references/VULCA-Bench/license_rights_manifest_v2_1.csv",
+      "sha256": "01f7ac8764377664f96d3e65a309a07de8dc319217b4c3f46e684fbf6dc64b83",
+      "size_bytes": 3038027
+    },
+    {
+      "path": "references/VULCA-Bench/release_manifest_v2_1.json",
+      "sha256": "62dcc88ec797f242f40f4c449582f0ace82eca8675d2c8abd4786c80372e6190",
+      "size_bytes": 2623
+    },
+    {
+      "path": "references/VULCA-Bench/VULCA-Bench_arXiv_2601.07986.pdf",
+      "sha256": "d5704d2b1851f334b6626c4a6ef31e0d2bae014bdedc7d352912b2a6a28fe069",
+      "size_bytes": 8579298
+    }
+  ],
+  "official_links": {
+    "HL Dataset": {
+      "github": "https://github.com/michelecafagna26/HL-dataset",
+      "selected_records": 650,
+      "local_selected_images": 650
+    },
+    "HSSBench": {
+      "github": "https://github.com/Zhaolu-K/HSSBench",
+      "paper": "https://arxiv.org/abs/2506.03922",
+      "selected_records": 182
+    },
+    "MM-MoralBench": {
+      "github": "https://github.com/BeiiiY/MM-MoralBench",
+      "paper": "https://arxiv.org/abs/2412.20718",
+      "image_download": "https://1drv.ms/u/c/3990e975c588b26f/EYe5aG7eOhhIq4rUxdErgyoBHZBH6kBeKa-q0gRzMMq7Rg",
+      "selected_records": 1080,
+      "local_selected_images": 1080,
+      "archive_file_name": "M3oral_images.zip",
+      "archive_size_bytes": 949271240
+    },
+    "ValueGround": {
+      "github": "https://github.com/NL2G/ValueGround",
+      "paper": "https://arxiv.org/abs/2604.06484",
+      "selected_records": 0,
+      "status": "论文与方法参考；截至2026-09-01官方数据尚未发布"
+    },
+    "VULCA-Bench": {
+      "github": "https://github.com/vulca-org/vulca-cultural-visual-benchmark",
+      "paper": "https://arxiv.org/abs/2601.07986",
+      "selected_records": 888,
+      "image_status": "第三方艺术图像不再分发"
+    }
+  }
+}

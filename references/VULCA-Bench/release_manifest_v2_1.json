@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "release": "v2.1",
+  "manifest_id": "vulca_bench_public_metadata_v2_1",
+  "assembled_on": "2026-07-16",
+  "source": {
+    "kind": "controlled_private_release_source",
+    "repository": "yha9806/vulca-emnlp2026",
+    "ref": "paper/bench-emnlp2026-release",
+    "commit": "2e5ee33740fcf16f6000316c410287c03bbfb3af",
+    "release_manifest_id": "vulca_bench_release_v2_1_20260524",
+    "release_manifest_git_commit": "427e8b63ae35428c206182108bf2cc7fdce9d233"
+  },
+  "expected": {
+    "records": 7236,
+    "unique_pair_ids": 7236,
+    "unique_ulids": 7236,
+    "unique_covered_dimensions": 236,
+    "culture_counts": {
+      "chinese": 1994,
+      "hermitage": 196,
+      "indian": 155,
+      "islamic": 165,
+      "japanese": 383,
+      "korean": 151,
+      "mural": 190,
+      "western": 4002
+    }
+  },
+  "rights": {
+    "manifest_rows": 7236,
+    "can_redistribute_image_true": 0,
+    "source_side_retrieval_required_true": 7136,
+    "embedded_review_only_true": 100,
+    "public_source_url_rows": 0,
+    "public_image_url_rows": 0,
+    "metadata_license": "CC BY 4.0",
+    "critique_license": "CC BY 4.0",
+    "image_license_label": "source_specific_not_relicensed",
+    "redistributed_image_files": 0
+  },
+  "hugging_face_observation": {
+    "repository": "harryHURRY/vulca-bench",
+    "commit": "27d68e76b61edc6ee4206e850f527cea7028964e",
+    "records": 7236,
+    "unique_covered_dimensions": 236,
+    "status": "reconciliation_required",
+    "mutated_by_this_release": false
+  },
+  "artifacts": {
+    "data/vulca_bench.jsonl": "1c467eb17120666e9f3457f6993af77b3b4d3b7eeaf689a8f4562137b13b1a31",
+    "data/culture_subsets/chinese.jsonl": "94cb5aca7f29abd580bbe24afd336deeeefc4849f96d0ae82f6aca9838d1b895",
+    "data/culture_subsets/hermitage.jsonl": "7a96bef102ca2749580cca87e65a5e9cd3cc1c9fac4533b7db95d3cbb684cabc",
+    "data/culture_subsets/indian.jsonl": "b9dc6f2f5dacdfb4e741a03b19f2213a809e6c5b707fe7ae5abe3d7d7f835a8b",
+    "data/culture_subsets/islamic.jsonl": "0d894247a8ee214a21872d2542e880cf3e7acc0b3bb205122252b5a8a2815fd4",
+    "data/culture_subsets/japanese.jsonl": "b207cb5e76a9ce2f6867963764d967172bcd9c8555defa72a1e3475e513129f4",
+    "data/culture_subsets/korean.jsonl": "6e8a788233fdb62735e4470e4869745ab9d689333a40c6ac469979181291e759",
+    "data/culture_subsets/mural.jsonl": "96d723bd4ac14a774ee201f23d9dcc20446c28c57c3c388f39b4ad3553924779",
+    "data/culture_subsets/western.jsonl": "56a2c8060adc7c5d8ccc95b9bd6df54bcf1e1d37db4e03f7f9b625c5c97aad97",
+    "data/license_rights_manifest_v2_1.csv": "01f7ac8764377664f96d3e65a309a07de8dc319217b4c3f46e684fbf6dc64b83"
+  }
+}

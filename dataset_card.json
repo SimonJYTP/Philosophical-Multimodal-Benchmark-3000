@@ -1,0 +1,155 @@
+{
+  "name": "Philosophical Multimodal Benchmark 2800 Image-Rich",
+  "version": "2800-image-rich-v3",
+  "generated_on": "2026-09-02",
+  "record_count": 2800,
+  "source_distribution": {
+    "HL Dataset": 650,
+    "HSSBench": 182,
+    "MM-MoralBench": 1080,
+    "VULCA-Bench": 888
+  },
+  "split_distribution": {
+    "train": 2235,
+    "dev": 278,
+    "test": 287
+  },
+  "task_distribution": {
+    "scene_action_rationale": 650,
+    "visual_multiple_choice_qa": 182,
+    "moral_judge": 540,
+    "moral_classification": 270,
+    "moral_response": 270,
+    "philosophical_aesthetics_dimension_identification": 888
+  },
+  "theme_distribution": {
+    "认识论：学习、知识与理解": 270,
+    "宗教哲学：信仰、仪式与超越": 25,
+    "伦理学：关怀、伤害与责任": 143,
+    "政治哲学：正义、权利与自由": 63,
+    "美学：艺术、创造与表达": 135,
+    "生命哲学：死亡、苦难与生存": 14,
+    "伦理学（官方 Ethics 标签）": 57,
+    "哲学（官方 Philosophy 标签）": 121,
+    "哲学与伦理学（官方标签）": 4,
+    "伦理学：关怀与伤害": 180,
+    "社群伦理：忠诚与背叛": 180,
+    "政治伦理：权威、义务与服从": 180,
+    "道德心理：神圣与纯洁": 180,
+    "政治哲学：自由与压迫": 180,
+    "伦理学：公平与正义": 180,
+    "宗教哲学与超越": 288,
+    "形式美学与艺术经验": 101,
+    "自然、宇宙与和谐": 152,
+    "身份、权力与文化记忆": 168,
+    "美、象征与精神表达": 90,
+    "生命、死亡与人的处境": 89
+  },
+  "vulca_culture_distribution": {
+    "chinese": 155,
+    "hermitage": 80,
+    "indian": 55,
+    "islamic": 60,
+    "japanese": 105,
+    "korean": 65,
+    "mural": 94,
+    "western": 274
+  },
+  "validation_authority_distribution": {
+    "image_enrichment_action_rationale_evidence": 413,
+    "strict_rule_plus_official_confidence": 237,
+    "official_subject_label": 182,
+    "official_moral_foundation_label": 1080,
+    "official_l5_philosophical_aesthetics": 888
+  },
+  "local_image_count": 1912,
+  "local_image_coverage": 0.682857,
+  "local_image_distribution": {
+    "HL Dataset": 650,
+    "HSSBench": 182,
+    "MM-MoralBench": 1080
+  },
+  "image_content_audit": {
+    "local_image_hash_count": 1912,
+    "unique_local_image_content_count": 1849,
+    "duplicate_image_content_group_count": 63,
+    "records_in_duplicate_image_groups": 126
+  },
+  "reference_file_count": 19,
+  "previous_core_overlap": 236,
+  "selection_rules": {
+    "HL Dataset": "650 image-bearing records: strict tier has support >= 2 and confidence >= 3.5; image-enrichment tier has exactly one action/rationale match, confidence >= 4.5, and excludes scene-only matches",
+    "HSSBench": "official Philosophy/Ethics only; normalized duplicate prompt conflict deduplicated to the prior core/majority-answer record",
+    "MM-MoralBench": "180 per moral foundation: 90 judge, 45 classification, 45 response",
+    "VULCA-Bench": "888 official L5 records, quality_score >= 85, culture/theme stratified; artwork images not redistributed",
+    "ValueGround": "paper/methodology reference only; no official public data available as of 2026-09-01"
+  },
+  "selection_audit": {
+    "hl_theme_tiers": {
+      "伦理学：关怀、伤害与责任": {
+        "strict": 32,
+        "image_enrichment": 111,
+        "selected": 143
+      },
+      "美学：艺术、创造与表达": {
+        "strict": 61,
+        "image_enrichment": 74,
+        "selected": 135
+      },
+      "认识论：学习、知识与理解": {
+        "strict": 104,
+        "image_enrichment": 166,
+        "selected": 270
+      },
+      "生命哲学：死亡、苦难与生存": {
+        "strict": 5,
+        "image_enrichment": 9,
+        "selected": 14
+      },
+      "政治哲学：正义、权利与自由": {
+        "strict": 18,
+        "image_enrichment": 45,
+        "selected": 63
+      },
+      "宗教哲学：信仰、仪式与超越": {
+        "strict": 17,
+        "image_enrichment": 8,
+        "selected": 25
+      }
+    },
+    "hss_conflict_deduplication_inherited_from": "2800-refined-v2",
+    "image_content_audit": {
+      "local_image_hash_count": 1912,
+      "unique_local_image_content_count": 1849,
+      "duplicate_image_content_group_count": 63,
+      "records_in_duplicate_image_groups": 126
+    }
+  },
+  "quality_checks": {
+    "row_count_is_2800": true,
+    "ids_unique": true,
+    "source_distribution_exact": true,
+    "all_philosophy_checks_pass": true,
+    "hl_strict_tier_valid": true,
+    "hl_image_enrichment_tier_valid": true,
+    "hl_tiers_cover_all_650": true,
+    "hss_normalized_prompts_unique": true,
+    "mm_quota_exact": true,
+    "vulca_l5_and_quality_ge_85": true,
+    "vulca_culture_quota_exact": true,
+    "all_local_image_paths_exist": true,
+    "local_image_count_is_1912": true,
+    "local_image_coverage_at_least_65_percent": true,
+    "image_source_distribution_exact": true,
+    "all_local_images_have_valid_signatures": true,
+    "duplicate_image_groups_identified": true,
+    "no_duplicate_image_content_crosses_splits": true,
+    "no_group_crosses_splits": true,
+    "query_has_no_target_field": true,
+    "answer_key_matches_ids": true,
+    "content_hashes_unique": true,
+    "targets_nonempty": true,
+    "vulca_labels_removed_from_input": true,
+    "no_unicode_replacement_character": true
+  }
+}

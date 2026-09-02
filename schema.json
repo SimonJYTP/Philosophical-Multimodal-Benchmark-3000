@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Philosophical Multimodal Benchmark 2800 Record",
+  "type": "object",
+  "required": [
+    "id",
+    "split",
+    "task",
+    "input",
+    "target",
+    "philosophy",
+    "source",
+    "audit"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^PHILBENCH-2800-[0-9]{4}$"
+    },
+    "split": {
+      "enum": [
+        "train",
+        "dev",
+        "test"
+      ]
+    },
+    "task": {
+      "type": "object",
+      "required": [
+        "family",
+        "output_type"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "prompt",
+        "context",
+        "options",
+        "image"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "answer",
+        "type"
+      ]
+    },
+    "philosophy": {
+      "type": "object",
+      "required": [
+        "primary_theme",
+        "validation"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "benchmark",
+        "original_id",
+        "url"
+      ]
+    },
+    "audit": {
+      "type": "object",
+      "required": [
+        "group_id",
+        "content_hash",
+        "philosophy_pass",
+        "selection_version"
+      ]
+    }
+  }
+}
