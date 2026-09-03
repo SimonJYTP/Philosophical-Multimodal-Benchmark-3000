@@ -1,8 +1,8 @@
-# Philosophical Multimodal Benchmark 3000 — Image-Rich (v5)
+# Philosophical Multimodal Benchmark 3000 — Image-Rich (v5.1)
 
 这是面向“哲学意味多模态理解”研究的图像增强 benchmark，共 **3,000 条**，其中 **2,591 条具有可直接读取的本地图片，覆盖率 86.37%**。图片均映射自各上游 benchmark 的原始视觉输入，没有用无关图片或合成图片补齐数量。
 
-v5 在 v4 的防泄漏、VULCA L5 目标修复和 MM 图像状态修复基础上，扩展到完整可复现的 3,000 条发布。构建器、独立发布验证器、盲测输入、答案键、来源快照和评分脚本同步升级。
+v5 在 v4 的防泄漏、VULCA L5 目标修复和 MM 图像状态修复基础上，扩展到完整可复现的 3,000 条发布。v5.1 进一步修复盲测元数据泄漏，并提供统一跨模型运行器、Prompt 套件、统计分析和人工评分规范。
 
 ## 1. 数据构成
 
@@ -50,7 +50,7 @@ v5 在 v4 的防泄漏、VULCA L5 目标修复和 MM 图像状态修复基础上
 ## 3. 目录结构
 
 ```text
-Philosophical_Multimodal_Benchmark_2800_ImageRich/
+Philosophical-Multimodal-Benchmark-3000/
 ├─ README.md
 ├─ LICENSE                           # v5.1 新增：CC BY 4.0（自建内容）+ 上游素材权利边界
 ├─ dataset_card.json
@@ -71,11 +71,21 @@ Philosophical_Multimodal_Benchmark_2800_ImageRich/
 │  └─ selected_source_records.jsonl  # 3,000 条原始来源快照
 ├─ review/
 │  └─ philosophical_multimodal_benchmark_3000_image_rich.csv
+├─ evaluation/
+│  ├─ PROTOCOL.zh-CN.md                # 完整评测与统计协议
+│  ├─ prompts.json                     # P0/P1 中英文 Prompt
+│  ├─ schemas/                         # 预测与运行清单 JSON Schema
+│  └─ templates/                       # 模型、指标、人工盲评模板
 ├─ references/
-└─ scripts/
-   ├─ build_dataset.py
-   ├─ validate_release.py
-   └─ evaluate.py
+├─ scripts/
+│  ├─ build_dataset.py
+│  ├─ validate_release.py
+│  ├─ evaluate.py                      # 官方基础评分
+│  ├─ run_models.py                    # 统一模型 API 运行器
+│  ├─ analyze_results.py               # CI、平衡准确率、Macro-F1 等
+│  └─ compare_runs.py                  # P0/P1 或视觉对照的配对检验
+└─ tests/
+   └─ test_evaluation_tools.py
 ```
 
 仓库目录名为保持 GitHub URL 兼容暂未改名；数据集版本、记录 ID 和发布文件名均已升级为 3000/v5。
@@ -108,7 +118,231 @@ Philosophical_Multimodal_Benchmark_2800_ImageRich/
 
 盲测时只向模型提供 `data/query.json`。该文件顶层严格只含 `id`、`split`、`task`、`input`，并移除了 `target`、答案相关哲学/来源元数据以及**全部记录的**图像原始引用（`original_reference`）。v5.1 起该剔除对无图记录（VULCA）同样生效——其原始引用含作品名、作者与内容标签，属于答案线索。推理完成后用 `data/answer_key.json` 按 ID 对齐评分。
 
-## 5. 快速使用
+## 5. 快速开始：直接测试模型
+
+评测工具需要 Python 3.10+，只依赖标准库。支持以下接口：
+
+| `--provider` | 适用平台 |
+|---|---|
+| `openai-responses` | OpenAI Responses API |
+| `openai-compatible` | Qwen/百炼、DeepSeek、Kimi、豆包、OpenAI Chat Completions、本地 vLLM/Ollama 等兼容接口 |
+| `anthropic` | Anthropic Messages API |
+| `gemini` | Google Gemini `generateContent` API |
+| `mock` | 不联网的流程自检 |
+
+> 安全提示：API key 只放入环境变量，不要写进命令、代码、结果文件或 Git commit。
+
+### 5.1 验证数据集
+
+```powershell
+py -3 .\scripts\validate_release.py
+py -3 -m unittest discover -s tests -v
+```
+
+### 5.2 不花费 API 额度的 smoke test
+
+下面命令选取 dev 的 2 条 HSS 题目，完整走通 Prompt、图片、解析和结果文件生成：
+
+```powershell
+py -3 .\scripts\run_models.py `
+  --provider mock `
+  --model mock-v1 `
+  --split dev `
+  --families visual_multiple_choice_qa `
+  --limit 2 `
+  --output-dir .\outputs\evaluation\smoke-hss
+
+py -3 .\scripts\analyze_results.py `
+  .\outputs\evaluation\smoke-hss\predictions.jsonl `
+  --split dev `
+  --families visual_multiple_choice_qa `
+  --allow-partial `
+  --bootstrap-samples 100
+```
+
+`--allow-partial` 仅供试跑。正式结果不得加此参数。
+
+### 5.3 OpenAI
+
+```powershell
+$env:OPENAI_API_KEY='YOUR_KEY'
+
+py -3 .\scripts\run_models.py `
+  --provider openai-responses `
+  --model EXACT_MODEL_ID `
+  --api-key-env OPENAI_API_KEY `
+  --split dev `
+  --families multimodal `
+  --prompt-suite P0 `
+  --limit 10 `
+  --output-dir .\outputs\evaluation\openai-dev-p0
+```
+
+论文结果应使用可追溯的确切 model ID，不要使用会自动更新的 `latest` 别名。
+
+### 5.4 Qwen、DeepSeek、Kimi、豆包、本地 vLLM 等 OpenAI 兼容接口
+
+```powershell
+$env:VLM_API_KEY='YOUR_KEY'
+
+py -3 .\scripts\run_models.py `
+  --provider openai-compatible `
+  --base-url https://YOUR_PROVIDER_API/v1 `
+  --model EXACT_MODEL_ID_OR_ENDPOINT_ID `
+  --api-key-env VLM_API_KEY `
+  --split dev `
+  --families multimodal `
+  --prompt-suite P0 `
+  --limit 10 `
+  --output-dir .\outputs\evaluation\provider-dev-p0
+```
+
+部分推理模型使用 `max_completion_tokens` 而非 `max_tokens`，此时增加：
+
+```powershell
+--max-tokens-field max_completion_tokens
+```
+
+如接口不接受采样参数或图像 `detail`，可增加 `--temperature none --top-p none --image-detail omit`。只在提供商确实支持时使用 `--api-seed 42`；`--seed 42` 只用于数据集内的可复现随机化（如错图对照）。这些差异必须记入实验配置，不应在看到 test 结果后再改。
+
+本地 vLLM 示例只需把 `--base-url` 改为本地 OpenAI 兼容地址，例如 `http://localhost:8000/v1`。
+
+### 5.5 Anthropic
+
+```powershell
+$env:ANTHROPIC_API_KEY='YOUR_KEY'
+
+py -3 .\scripts\run_models.py `
+  --provider anthropic `
+  --model EXACT_CLAUDE_MODEL_ID `
+  --api-key-env ANTHROPIC_API_KEY `
+  --split dev `
+  --families multimodal `
+  --prompt-suite P0 `
+  --limit 10 `
+  --output-dir .\outputs\evaluation\claude-dev-p0
+```
+
+### 5.6 Gemini
+
+```powershell
+$env:GEMINI_API_KEY='YOUR_KEY'
+
+py -3 .\scripts\run_models.py `
+  --provider gemini `
+  --model EXACT_GEMINI_MODEL_ID `
+  --api-key-env GEMINI_API_KEY `
+  --split dev `
+  --families multimodal `
+  --prompt-suite P0 `
+  --limit 10 `
+  --output-dir .\outputs\evaluation\gemini-dev-p0
+```
+
+### 5.7 正式 P0/P1 评测
+
+先在 dev 上确认接口和解析器；冻结 model ID、Prompt、参数后，才运行 test。默认 `multimodal` 包含五个有图任务，共 260 条 test 记录，不包含无图的 VULCA。
+
+```powershell
+# P0：直接作答主基线
+py -3 .\scripts\run_models.py `
+  --provider openai-compatible `
+  --base-url https://YOUR_PROVIDER_API/v1 `
+  --model EXACT_MODEL_ID `
+  --api-key-env VLM_API_KEY `
+  --split test `
+  --families multimodal `
+  --prompt-suite P0 `
+  --workers 4 `
+  --output-dir .\outputs\evaluation\MODEL-test-p0
+
+# P1：证据优先 Prompt；模型版本和生成参数必须与 P0 相同
+py -3 .\scripts\run_models.py `
+  --provider openai-compatible `
+  --base-url https://YOUR_PROVIDER_API/v1 `
+  --model EXACT_MODEL_ID `
+  --api-key-env VLM_API_KEY `
+  --split test `
+  --families multimodal `
+  --prompt-suite P1 `
+  --workers 4 `
+  --output-dir .\outputs\evaluation\MODEL-test-p1
+```
+
+分别评分：
+
+```powershell
+py -3 .\scripts\analyze_results.py `
+  .\outputs\evaluation\MODEL-test-p0\predictions.jsonl `
+  --split test `
+  --families multimodal
+
+py -3 .\scripts\analyze_results.py `
+  .\outputs\evaluation\MODEL-test-p1\predictions.jsonl `
+  --split test `
+  --families multimodal
+
+# 配对比较 P1-P0；正值表示 P1 更好
+py -3 .\scripts\compare_runs.py `
+  .\outputs\evaluation\MODEL-test-p0\predictions.jsonl `
+  .\outputs\evaluation\MODEL-test-p1\predictions.jsonl `
+  --split test `
+  --families multimodal `
+  --output-dir .\outputs\evaluation\MODEL-test-p1-vs-p0
+```
+
+比较脚本只配对同一 `id`，按 `group_id` 整组 bootstrap 95% CI；选择题另报告 McNemar 精确检验并在任务族间做 Holm 校正。正式比较不得使用 `--allow-partial`。
+
+### 5.8 无图、错图与 HL context 对照
+
+在原运行命令中分别加入：
+
+```powershell
+--condition text_only
+--condition shuffled_image --seed 42
+--condition hl_gold_context --families scene_action_rationale --prompt-suite P0
+```
+
+- `correct_image - text_only` 是主要视觉增益。
+- `shuffled_image` 检查回答是否随视觉证据变化。
+- `hl_gold_context` 使用官方 scene/action/object，是信息上界，不是视觉主结果。
+
+### 5.9 VULCA 的使用限制
+
+VULCA 记录没有本地图像，而且目标是 `CN_L5_D1` 等不透明标签。当前发布没有完整 L5 标签定义字典；因此默认评测明确排除 VULCA。只有在发布全局、版本化的 codebook 后才能运行：
+
+```powershell
+py -3 .\scripts\run_models.py `
+  --provider openai-compatible `
+  --base-url https://YOUR_PROVIDER_API/v1 `
+  --model EXACT_MODEL_ID `
+  --api-key-env VLM_API_KEY `
+  --split test `
+  --families philosophical_aesthetics_dimension_identification `
+  --vulca-codebook .\path\to\published_l5_codebook.json `
+  --output-dir .\outputs\evaluation\MODEL-vulca-test
+```
+
+runner 会拒绝空 codebook 或含 `AUTHOR_INPUT_NEEDED` 占位符的文件，避免产生不可解释的结果。
+
+### 5.10 输出文件
+
+每个运行目录包含：
+
+```text
+run_manifest.json       # 模型、Prompt、哈希、参数、时间、token、成本
+predictions.jsonl       # 原始回答、规范化答案、解析/拒答/API 错误、延迟
+analysis/
+├─ summary.json         # 机器可读汇总
+├─ metrics_long.csv     # 论文统计长表
+└─ report.md            # 人类可读结果表
+```
+
+配对比较目录包含 `comparison.json`、`metrics_delta.csv` 和 `comparison.md`。
+
+分析器按任务族报告 Accuracy、Balanced Accuracy、Macro-F1、HL token F1、拒答率、解析失败率和 API 失败率，并给出 Wilson 或按 `group_id` 聚类 bootstrap 的 95% CI。完整实验设计、HL 双人盲评量表与论文表格规范见 [`evaluation/PROTOCOL.zh-CN.md`](evaluation/PROTOCOL.zh-CN.md)，固定 Prompt 见 [`evaluation/prompts.json`](evaluation/prompts.json)。
+
+### 5.11 读取原始数据
 
 ```python
 import json

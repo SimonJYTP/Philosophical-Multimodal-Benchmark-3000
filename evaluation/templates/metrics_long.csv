@@ -1,0 +1,2 @@
+run_id,provider,model_id,prompt_id,condition,language,source,family,subgroup,n_items,metric,estimate,ci95_low,ci95_high,baseline,delta_reference_run_id,delta_estimate,delta_ci95_low,delta_ci95_high,p_value,p_adjusted,correction_family,notes
+AUTHOR_INPUT_NEEDED,AUTHOR_INPUT_NEEDED,AUTHOR_INPUT_NEEDED,P0-choice-direct-en-v1,correct_image,en,MM-MoralBench,moral_judge,all,0,accuracy,,,,,,,,,,,,

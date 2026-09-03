@@ -1,0 +1,2 @@
+provider,product_name,model_id,model_snapshot_date,access_mode,endpoint_region,open_weights,parameter_count,reasoning_setting,image_detail_setting,api_doc_url,accessed_at_utc,notes
+AUTHOR_INPUT_NEEDED,AUTHOR_INPUT_NEEDED,AUTHOR_INPUT_NEEDED,,api,,false,,,,,,

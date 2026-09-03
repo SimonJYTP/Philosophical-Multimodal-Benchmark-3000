@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PHILBENCH-3000 run manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "benchmark_version",
+    "benchmark_commit",
+    "query_sha256",
+    "provider",
+    "model_id",
+    "access_mode",
+    "prompt_id",
+    "prompt_ids_by_family",
+    "prompt_file_sha256",
+    "split",
+    "condition",
+    "conditions_by_family",
+    "language",
+    "generation",
+    "tools_disabled",
+    "started_at_utc",
+    "protocol_deviations"
+  ],
+  "properties": {
+    "run_id": {"type": "string", "minLength": 1},
+    "benchmark_version": {"const": "3000-image-rich-v5"},
+    "benchmark_commit": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+    "query_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "answer_key_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "code_commit": {"type": ["string", "null"]},
+    "provider": {"type": "string", "minLength": 1},
+    "model_id": {"type": "string", "minLength": 1},
+    "model_snapshot_date": {"type": ["string", "null"], "format": "date"},
+    "access_mode": {"enum": ["api", "local", "ui"]},
+    "endpoint_region": {"type": ["string", "null"]},
+    "prompt_id": {"type": "string", "minLength": 1},
+    "prompt_ids_by_family": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "prompt_file_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "split": {"enum": ["dev", "test"]},
+    "condition": {
+      "enum": ["correct_image", "context_removed", "text_only", "shuffled_image", "hl_gold_context", "text_only_native", "kg_augmented"]
+    },
+    "conditions_by_family": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "enum": ["correct_image", "context_removed", "text_only", "shuffled_image", "hl_gold_context", "text_only_native", "kg_augmented"]
+      }
+    },
+    "language": {"type": "string", "minLength": 2},
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["temperature", "top_p", "seed", "max_output_tokens", "reasoning_setting"],
+      "properties": {
+        "temperature": {"type": ["number", "null"]},
+        "top_p": {"type": ["number", "null"]},
+        "seed": {"type": ["integer", "null"]},
+        "max_output_tokens": {"type": "integer", "minimum": 1},
+        "reasoning_setting": {"type": ["string", "null"]}
+      }
+    },
+    "image_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "original_bytes": {"type": "boolean"},
+        "resize_policy": {"type": ["string", "null"]},
+        "provider_detail_setting": {"type": ["string", "null"]}
+      }
+    },
+    "tools_disabled": {"const": true},
+    "max_retries": {"type": "integer", "minimum": 0},
+    "timeout_seconds": {"type": ["number", "null"], "minimum": 0},
+    "software_environment": {"type": "object"},
+    "hardware_environment": {"type": ["object", "null"]},
+    "started_at_utc": {"type": "string", "format": "date-time"},
+    "ended_at_utc": {"type": ["string", "null"], "format": "date-time"},
+    "total_input_tokens": {"type": ["integer", "null"], "minimum": 0},
+    "total_output_tokens": {"type": ["integer", "null"], "minimum": 0},
+    "total_cost_usd": {"type": ["number", "null"], "minimum": 0},
+    "protocol_deviations": {"type": "array", "items": {"type": "string"}}
+  }
+}

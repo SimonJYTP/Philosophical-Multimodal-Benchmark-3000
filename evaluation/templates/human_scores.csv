@@ -1,0 +1,2 @@
+blinded_output_id,id,rater_id_hash,scene_correctness,action_correctness,rationale_plausibility,evidence_linkage,overinterpretation_control,total_score,critical_hallucination,adjudicated,comment
+AUTHOR_INPUT_NEEDED,PHILBENCH-3000-0001,AUTHOR_INPUT_NEEDED,,,,,,,,false,
