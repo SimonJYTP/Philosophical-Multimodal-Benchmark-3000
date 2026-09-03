@@ -33,8 +33,9 @@ def read_jsonl(path: Path) -> list[dict]:
 
 def release_query(record: dict) -> dict:
     image = dict(record["input"]["image"])
-    if image.get("path"):
-        image.pop("original_reference", None)
+    # v5.1：original_reference 无条件剔除。无图记录（VULCA）的原始引用
+    # 含作品名/作者/内容标签，属于答案线索，不能因 path 为空而保留。
+    image.pop("original_reference", None)
     return {
         "id": record["id"],
         "split": record["split"],
@@ -75,6 +76,10 @@ def main() -> None:
     check(Counter(record["source"]["benchmark"] for record in records) == Counter(EXPECTED_SOURCES), "source quotas changed")
     check(Counter(record["task"]["family"] for record in records) == Counter(EXPECTED_TASKS), "task quotas changed")
     check(queries == [release_query(record) for record in records], "query.json is stale or leaks hidden metadata")
+    check(
+        all("original_reference" not in query["input"]["image"] for query in queries),
+        "query.json leaks original_reference (answer-revealing metadata) in at least one record",
+    )
     check(
         answers == [{"id": record["id"], "split": record["split"], "target": record["target"]} for record in records],
         "answer_key.json is not exactly aligned with benchmark.jsonl",

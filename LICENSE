@@ -1,0 +1,46 @@
+Philosophical Multimodal Benchmark 3000 — Image-Rich (v5)
+License and Rights Statement
+=====================================================================
+
+1. Self-built materials (this repository's original work)
+
+   The following original materials created for this benchmark are
+   released under the Creative Commons Attribution 4.0 International
+   License (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/):
+
+     - the unified record schema, record IDs, split assignments and
+       selection/audit metadata (schema.json, dataset_card.json,
+       audit fields in data/*.jsonl, splits/*.jsonl);
+     - the build, validation and evaluation scripts (scripts/);
+     - the review CSV, documentation and this rights statement.
+
+2. Upstream materials (NOT covered by the license above)
+
+   This benchmark redistributes or references content from upstream
+   projects. Those materials remain under their original terms, and the
+   CC BY 4.0 grant above does NOT apply to them:
+
+     - HL Dataset: annotations under Apache-2.0; images and object
+       descriptions remain subject to the original MS COCO terms.
+       https://github.com/michelecafagna26/HL-dataset
+     - HSSBench: the official repository provides no standalone LICENSE;
+       confirm redistribution permission with the authors before
+       republication. https://github.com/Zhaolu-K/HSSBench
+     - MM-MoralBench: images originate from the authors' publicly
+       provided image archive; the official repository provides no
+       standalone LICENSE; confirm before republication.
+       https://github.com/BeiiiY/MM-MoralBench
+     - VULCA-Bench: benchmark metadata, critiques and tools under
+       CC BY 4.0; third-party artwork images are NOT redistributed by
+       this repository (only original references are retained).
+       https://github.com/vulca-org/vulca-cultural-visual-benchmark
+     - ValueGround: paper/repository reference only; no data
+       redistributed. https://github.com/NL2G/ValueGround
+
+   Per-record rights notes and source URLs are preserved in
+   source_snapshots/selected_source_records.jsonl and references/.
+
+3. Attribution
+
+   When using this benchmark, please cite the upstream sources above as
+   well as this repository.

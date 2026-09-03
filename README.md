@@ -52,6 +52,7 @@ v5 在 v4 的防泄漏、VULCA L5 目标修复和 MM 图像状态修复基础上
 ```text
 Philosophical_Multimodal_Benchmark_2800_ImageRich/
 ├─ README.md
+├─ LICENSE                           # v5.1 新增：CC BY 4.0（自建内容）+ 上游素材权利边界
 ├─ dataset_card.json
 ├─ schema.json
 ├─ data/
@@ -105,7 +106,7 @@ Philosophical_Multimodal_Benchmark_2800_ImageRich/
 }
 ```
 
-盲测时只向模型提供 `data/query.json`。该文件顶层严格只含 `id`、`split`、`task`、`input`，并移除了 `target`、答案相关哲学/来源元数据以及本地图像原始文件名。推理完成后用 `data/answer_key.json` 按 ID 对齐评分。
+盲测时只向模型提供 `data/query.json`。该文件顶层严格只含 `id`、`split`、`task`、`input`，并移除了 `target`、答案相关哲学/来源元数据以及**全部记录的**图像原始引用（`original_reference`）。v5.1 起该剔除对无图记录（VULCA）同样生效——其原始引用含作品名、作者与内容标签，属于答案线索。推理完成后用 `data/answer_key.json` 按 ID 对齐评分。
 
 ## 5. 快速使用
 
@@ -137,20 +138,27 @@ assert len(hl_enrichment) == 492
 
 | 任务族 | 输出 | 主指标 |
 |---|---|---|
-| `scene_action_rationale` | 自由文本 Rationale | 人工量表 + 预先声明的语义指标 |
+| `scene_action_rationale` | 自由文本 Rationale | max-reference token F1（已预先声明并在 `evaluate.py` 实现）+ 人工量表 |
 | `visual_multiple_choice_qa` | A–D | Accuracy |
-| `moral_judge` | A/B | Accuracy |
-| `moral_classification` | A–G | Accuracy |
-| `moral_response` | A/B | Accuracy |
+| `moral_judge` | A/B | Accuracy（同时报告随机基线 50% 对照） |
+| `moral_classification` | A–G | Accuracy（同时报告随机基线 ≈14.3% 对照） |
+| `moral_response` | A/B | Accuracy（同时报告随机基线 50% 对照） |
 | `philosophical_aesthetics_dimension_identification` | L5 标签集合 | Micro-F1、Macro-F1、Exact Match |
 
-对自动评分任务运行：
+运行评分（HL 自由文本与其余任务共用同一入口）：
 
 ```powershell
 py -3 .\scripts\evaluate.py .\predictions.jsonl --split test
 ```
 
-脚本要求预测 ID 与所选划分完全一致。HL 自由文本会明确列为需要语义或人工评分，不会用不恰当的字面匹配混入总分。跨来源汇总时应先报告各来源结果，再使用明确归一化的宏平均。
+脚本要求预测 ID 与所选划分完全一致。HL 的 token F1 是预先注册的词汇级代理指标：参考答案按 `；` 拆分为多条人工 rationale，取最大 token F1 后求均值；用于跨模型横向比较与回归监控，论文级结论仍应搭配人工量表或语义相似度指标。跨来源汇总时应先报告各来源结果，再使用明确归一化的宏平均。
+
+### 评测协议约定（保证结果可比）
+
+1. **HSSBench 语言固定**：记录的 `prompt` 同时携带 6 种语言，评测时必须固定一种（建议 `en`）或按语言分别报告，不得混用。
+2. **HL context 双条件报告**：HL 盲测输入附带官方 scene/action/object 金标准标注，模型可不读图作答。须分别报告"含 context"与"去除 context（仅图+prompt）"两种条件；后者才是视觉理解能力的有效测量。
+3. **二元任务基线**：`moral_judge`/`moral_response` 随机基线为 50%，报告时应附随机/多数类基线对照。
+4. **VULCA 计入口径**：VULCA 为纯文本任务，不应计入"多模态"总分，须单列。
 
 ## 7. 构建与验证
 
@@ -174,10 +182,14 @@ py -3 .\scripts\validate_release.py
 - 2,591 个本地图片路径、文件签名和 SHA-256 一致性；
 - 2,440 个唯一图像内容、151 个重复内容组、所有重复内容不跨划分；
 - 86.37% 图像覆盖率，严格高于 80%；
-- 盲测查询不含 target、答案相关元数据或本地图像原始文件名；
+- 盲测查询不含 target、答案相关元数据或任何记录的图像原始引用（v5.1 起含无图记录，验证器强制断言）；
 - 无 Unicode 替换字符。
 
 自动规则不能替代哲学专家复核。论文定稿前仍建议对 HL 图像增强层进行分层抽样专家复核，报告标注一致性，并实际运行基线模型。
+
+### 数据污染声明
+
+全部 3,000 条记录源自四个公开上游 benchmark，其数据长期公开，不能排除已进入模型预训练语料。使用本 benchmark 得出能力结论前，建议执行污染对照：在无图条件下作答选择题（"无图准确率"显著高于随机基线即提示记忆/捷径），或进行逐字记忆探测。跨模型比较时应同时报告该对照结果。
 
 ## 9. 图片与许可边界
 
@@ -187,7 +199,7 @@ py -3 .\scripts\validate_release.py
 - VULCA-Bench：benchmark 元数据、评论和工具使用 CC BY 4.0；该许可不自动覆盖第三方艺术作品图片。
 - ValueGround：仅保存论文和仓库说明，没有虚构未发布数据。
 
-相关论文、官方 README、许可证、VULCA 图像权利说明和逐条权利清单位于 `references/`。仓库不附加一个覆盖全部上游内容的统一数据许可证。
+相关论文、官方 README、许可证、VULCA 图像权利说明和逐条权利清单位于 `references/`。v5.1 起仓库根目录提供 `LICENSE`：自建元数据、schema、脚本与文档采用 CC BY 4.0；上游素材仍受各自原始条款约束（见上），本仓库不附加覆盖全部上游内容的统一数据许可证。
 
 ## 10. 原始项目
 
@@ -196,3 +208,17 @@ py -3 .\scripts\validate_release.py
 - MM-MoralBench: <https://github.com/BeiiiY/MM-MoralBench>
 - ValueGround: <https://github.com/NL2G/ValueGround>
 - VULCA-Bench: <https://github.com/vulca-org/vulca-cultural-visual-benchmark>
+
+## 11. 变更记录
+
+### v5.1（2026-09-03，维护性修订，数据记录不变）
+
+- **修复盲测泄漏（重要）**：`data/query.json` 中 409 条 VULCA 记录此前保留 `image.original_reference`（含作品名/作者/内容标签）。现已无条件剔除全部记录的该字段；`build_dataset.py`、`validate_release.py` 同步修复并新增强制断言。**凡在 v5.1 之前用 VULCA 部分做过的评测，结果可能受泄漏影响，建议用新 `query.json` 重测。**
+- `evaluate.py` 为 HL 自由文本实现预先声明的 max-reference token F1 指标，HL 不再依赖"另行声明"的评分流程。
+- 新增 `LICENSE`（自建内容 CC BY 4.0 + 上游素材权利边界）。
+- README 增补评测协议约定（HSS 语言固定、HL context 双条件、二元任务随机基线、VULCA 计入口径）与数据污染声明。
+- `dataset_card.json` 已知局限同步更新。`benchmark.jsonl`、`splits/`、图片、答案键与全部内容哈希均未改动，v5 结果与新盲测输入在非 VULCA 任务上完全可比。
+
+### v5（2026-09-03）
+
+- 扩展到 3,000 条完整可复现发布；防泄漏、VULCA L5 目标修复、MM 图像状态修复。

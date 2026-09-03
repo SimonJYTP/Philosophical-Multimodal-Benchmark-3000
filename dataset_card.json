@@ -128,7 +128,9 @@
   },
   "known_limitations": [
     "VULCA-Bench records are text-only proxies in this release because third-party artwork images are not redistributed.",
-    "HL free-text rationales require human or separately specified semantic evaluation; exact match is not a valid primary metric.",
+    "HL free-text rationales are scored with a pre-declared lexical proxy (max-reference token F1) implemented in evaluate.py; human or semantic evaluation is still recommended for publication-grade claims.",
+    "HL blind queries include the official scene/action/object annotations as input context; models can answer without reading the image, so with-context and no-context conditions should be reported separately.",
+    "All records derive from four public upstream benchmarks; training-data contamination cannot be excluded, and users should run memorization or no-image control probes before drawing capability conclusions.",
     "No new inter-annotator agreement statistic is included; HL enrichment labels still require expert audit.",
     "No model baseline results are bundled; evaluate.py defines scoring but does not substitute for experiments.",
     "HSSBench and MM-MoralBench image redistribution permissions should be confirmed before downstream republication."

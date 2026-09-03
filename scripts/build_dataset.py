@@ -524,12 +524,13 @@ def build_query(record: dict) -> dict:
 
     泄漏源：philosophy.primary_theme / source.category 直接等于部分任务（如
     MM-MoralBench 的 moral_classification）的正确答案；audit 含内部选择痕迹。
-    因此盲测 query 只保留 id/split/task/input，并移除有本地图片时的
-    original_reference（原始文件名可能映射到来源/答案）。
+    因此盲测 query 只保留 id/split/task/input。
+    original_reference 对全部记录无条件移除（v5.1 修复）：本地图片的原始文件名
+    可映射到上游来源；VULCA 等无图记录的原始引用更直接包含作品名、作者与内容
+    标签，属于答案线索，必须无条件剔除，无论 image.path 是否存在。
     """
     image = dict(record["input"]["image"])
-    if image.get("path"):
-        image.pop("original_reference", None)
+    image.pop("original_reference", None)
     return {
         "id": record["id"],
         "split": record["split"],
@@ -680,7 +681,6 @@ def validate(records: list[dict], queries: list[dict], answers: list[dict]) -> d
         "query_hides_local_source_filenames": all(
             "original_reference" not in query["input"]["image"]
             for query in queries
-            if query["input"]["image"].get("path")
         ),
         "queries_match_release_records": queries == [build_query(record) for record in records],
         "answer_key_matches_records": answers == [
@@ -864,7 +864,9 @@ def main() -> None:
         "selection_audit": selection_audit,
         "known_limitations": [
             "VULCA-Bench records are text-only proxies in this release because third-party artwork images are not redistributed.",
-            "HL free-text rationales require human or separately specified semantic evaluation; exact match is not a valid primary metric.",
+            "HL free-text rationales are scored with a pre-declared lexical proxy (max-reference token F1) implemented in evaluate.py; human or semantic evaluation is still recommended for publication-grade claims.",
+            "HL blind queries include the official scene/action/object annotations as input context; models can answer without reading the image, so with-context and no-context conditions should be reported separately.",
+            "All records derive from four public upstream benchmarks; training-data contamination cannot be excluded, and users should run memorization or no-image control probes before drawing capability conclusions.",
             "No new inter-annotator agreement statistic is included; HL enrichment labels still require expert audit.",
             "No model baseline results are bundled; evaluate.py defines scoring but does not substitute for experiments.",
             "HSSBench and MM-MoralBench image redistribution permissions should be confirmed before downstream republication.",

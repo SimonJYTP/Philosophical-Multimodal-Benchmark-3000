@@ -9,13 +9,56 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AUTO_FAMILIES = {
-    "visual_multiple_choice_qa",
-    "moral_judge",
-    "moral_classification",
-    "moral_response",
-    "philosophical_aesthetics_dimension_identification",
-}
+RATIONALE_FAMILY = "scene_action_rationale"
+
+# 预先声明的 HL 自由文本评分指标（v5.1）
+# ----------------------------------------
+# metric: max-reference token F1（词汇级，确定性，纯标准库实现）
+#   1. 参考答案按 "；" 拆分为多条人工 rationale；
+#   2. 预测与每条参考分别计算 token 级 F1（英文按空白/分词字符切分，中文按字符
+#      bigram 切分），取最大值作为该样本得分；
+#   3. 数据集得分为全部样本均值。
+# 该指标是预先注册的词汇级代理指标，用于跨模型横向比较与回归监控；
+# 它不能替代人工量表或语义相似度评估，论文报告时应同时给出人工/语义评分。
+def _tokens(text: str) -> list[str]:
+    """英文/数字按词切分，连续中文按字符 bigram 切分（单字则保留单字）。"""
+    tokens: list[str] = []
+    for run in re.findall(r"[a-z0-9]+|[一-鿿]+", str(text).lower()):
+        if re.fullmatch(r"[一-鿿]+", run):
+            if len(run) == 1:
+                tokens.append(run)
+            else:
+                tokens.extend(run[i : i + 2] for i in range(len(run) - 1))
+        else:
+            tokens.append(run)
+    return tokens
+
+
+def token_f1(prediction: object, reference: object) -> float:
+    pred_tokens = _tokens(str(prediction))
+    ref_tokens = _tokens(str(reference))
+    if not pred_tokens or not ref_tokens:
+        return 0.0
+    common = defaultdict(int)
+    for token in pred_tokens:
+        common[token] += 1
+    overlap = 0
+    for token in ref_tokens:
+        if common[token] > 0:
+            common[token] -= 1
+            overlap += 1
+    if not overlap:
+        return 0.0
+    precision = overlap / len(pred_tokens)
+    recall = overlap / len(ref_tokens)
+    return 2 * precision * recall / (precision + recall)
+
+
+def rationale_score(prediction: object, gold: object) -> float:
+    references = [ref.strip() for ref in str(gold).split("；") if ref.strip()]
+    if not references:
+        return 0.0
+    return max(token_f1(prediction, ref) for ref in references)
 
 
 def load_predictions(path: str) -> list[dict]:
@@ -62,11 +105,11 @@ def main() -> None:
     gold = {item["id"]: item["target"]["answer"] for item in answers if item["id"] in records}
     choice_scores: dict[str, list[bool]] = defaultdict(list)
     vulca_pairs: list[tuple[set[str], set[str]]] = []
-    manual = 0
+    rationale_scores: list[float] = []
     for record_id, record in records.items():
         family = record["task"]["family"]
-        if family not in AUTO_FAMILIES:
-            manual += 1
+        if family == RATIONALE_FAMILY:
+            rationale_scores.append(rationale_score(predicted[record_id], gold[record_id]))
         elif record["task"]["output_type"] == "choice":
             choice_scores[family].append(choice(predicted[record_id]) == choice(gold[record_id]))
         else:
@@ -97,10 +140,11 @@ def main() -> None:
             "micro_f1": ratio(2 * true_positive, 2 * true_positive + false_positive + false_negative),
             "macro_f1": round(sum(label_f1) / len(label_f1), 6) if label_f1 else 0.0,
         },
-        "manual_or_semantic_scoring_required": {
-            "family": "scene_action_rationale",
-            "count": manual,
-            "reason": "Free-text rationales require a declared semantic metric and/or human rubric.",
+        "hl_rationale": {
+            "count": len(rationale_scores),
+            "metric": "max-reference token F1 (pre-declared lexical proxy)",
+            "mean_max_token_f1": round(sum(rationale_scores) / len(rationale_scores), 6) if rationale_scores else 0.0,
+            "note": "Lexical proxy for cross-model comparison only; pair with a human rubric or declared semantic metric for publication-grade claims.",
         },
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
