@@ -1,105 +1,105 @@
 {
-  "name": "Philosophical Multimodal Benchmark 2800 Image-Rich",
-  "version": "2800-image-rich-v4",
+  "name": "Philosophical Multimodal Benchmark 3000 Image-Rich",
+  "version": "3000-image-rich-v5",
   "generated_on": "2026-09-03",
-  "record_count": 2800,
+  "record_count": 3000,
   "source_distribution": {
-    "HL Dataset": 650,
+    "HL Dataset": 729,
     "HSSBench": 182,
-    "MM-MoralBench": 1080,
-    "VULCA-Bench": 888
+    "MM-MoralBench": 1680,
+    "VULCA-Bench": 409
   },
   "split_distribution": {
-    "train": 2235,
-    "dev": 278,
-    "test": 287
+    "train": 2386,
+    "dev": 304,
+    "test": 310
   },
   "task_distribution": {
-    "scene_action_rationale": 650,
+    "scene_action_rationale": 729,
     "visual_multiple_choice_qa": 182,
-    "moral_judge": 540,
-    "moral_classification": 270,
-    "moral_response": 270,
-    "philosophical_aesthetics_dimension_identification": 888
+    "moral_judge": 840,
+    "moral_classification": 420,
+    "moral_response": 420,
+    "philosophical_aesthetics_dimension_identification": 409
   },
   "theme_distribution": {
-    "认识论：学习、知识与理解": 270,
+    "认识论：学习、知识与理解": 329,
     "宗教哲学：信仰、仪式与超越": 25,
-    "伦理学：关怀、伤害与责任": 143,
+    "伦理学：关怀、伤害与责任": 156,
     "政治哲学：正义、权利与自由": 63,
-    "美学：艺术、创造与表达": 135,
+    "美学：艺术、创造与表达": 142,
     "生命哲学：死亡、苦难与生存": 14,
     "伦理学（官方 Ethics 标签）": 57,
     "哲学（官方 Philosophy 标签）": 121,
     "哲学与伦理学（官方标签）": 4,
-    "伦理学：关怀与伤害": 180,
-    "社群伦理：忠诚与背叛": 180,
-    "政治伦理：权威、义务与服从": 180,
-    "道德心理：神圣与纯洁": 180,
-    "政治哲学：自由与压迫": 180,
-    "伦理学：公平与正义": 180,
-    "宗教哲学与超越": 288,
-    "形式美学与艺术经验": 101,
-    "自然、宇宙与和谐": 152,
-    "身份、权力与文化记忆": 168,
-    "美、象征与精神表达": 90,
-    "生命、死亡与人的处境": 89
+    "伦理学：关怀与伤害": 280,
+    "社群伦理：忠诚与背叛": 280,
+    "政治伦理：权威、义务与服从": 280,
+    "道德心理：神圣与纯洁": 280,
+    "政治哲学：自由与压迫": 280,
+    "伦理学：公平与正义": 280,
+    "宗教哲学与超越": 116,
+    "形式美学与艺术经验": 57,
+    "自然、宇宙与和谐": 65,
+    "美、象征与精神表达": 53,
+    "生命、死亡与人的处境": 48,
+    "身份、权力与文化记忆": 70
   },
   "vulca_culture_distribution": {
-    "chinese": 155,
-    "hermitage": 80,
-    "indian": 55,
-    "islamic": 60,
-    "japanese": 105,
-    "korean": 65,
-    "mural": 94,
-    "western": 274
+    "chinese": 71,
+    "hermitage": 37,
+    "indian": 25,
+    "islamic": 28,
+    "japanese": 48,
+    "korean": 30,
+    "mural": 44,
+    "western": 126
   },
   "validation_authority_distribution": {
-    "image_enrichment_action_rationale_evidence": 413,
+    "image_enrichment_action_rationale_evidence": 492,
     "strict_rule_plus_official_confidence": 237,
     "official_subject_label": 182,
-    "official_moral_foundation_label": 1080,
-    "official_l5_philosophical_aesthetics": 888
+    "official_moral_foundation_label": 1680,
+    "official_l5_philosophical_aesthetics": 409
   },
-  "local_image_count": 1912,
-  "local_image_coverage": 0.682857,
+  "local_image_count": 2591,
+  "local_image_coverage": 0.863667,
   "local_image_distribution": {
-    "HL Dataset": 650,
+    "HL Dataset": 729,
     "HSSBench": 182,
-    "MM-MoralBench": 1080
+    "MM-MoralBench": 1680
   },
   "image_content_audit": {
-    "local_image_hash_count": 1912,
-    "unique_local_image_content_count": 1849,
-    "duplicate_image_content_group_count": 63,
-    "records_in_duplicate_image_groups": 126
+    "local_image_hash_count": 2591,
+    "unique_local_image_content_count": 2440,
+    "duplicate_image_content_group_count": 151,
+    "records_in_duplicate_image_groups": 302
   },
   "reference_file_count": 19,
   "previous_core_overlap": 236,
   "selection_rules": {
-    "HL Dataset": "650 image-bearing records: strict tier has support >= 2 and confidence >= 3.5; image-enrichment tier has exactly one action/rationale match, confidence >= 4.5, and excludes scene-only matches",
+    "HL Dataset": "729 image-bearing records: all records satisfying either the strict tier (support >= 2 and confidence >= 3.5) or image-enrichment tier (exactly one action/rationale match, confidence >= 4.5; scene-only matches excluded)",
     "HSSBench": "official Philosophy/Ethics only; normalized duplicate prompt conflict deduplicated to the prior core/majority-answer record",
-    "MM-MoralBench": "180 per moral foundation: 90 judge, 45 classification, 45 response",
-    "VULCA-Bench": "888 official L5 records, quality_score >= 85, culture/theme stratified; artwork images not redistributed",
+    "MM-MoralBench": "280 per moral foundation from the complete official query set: 140 judge, 70 classification, 70 response; all official images locally mapped",
+    "VULCA-Bench": "409 official L5 records, quality_score >= 85, culture/theme stratified; artwork images not redistributed",
     "ValueGround": "paper/methodology reference only; no official public data available as of 2026-09-01"
   },
   "selection_audit": {
     "hl_theme_tiers": {
       "伦理学：关怀、伤害与责任": {
         "strict": 32,
-        "image_enrichment": 111,
-        "selected": 143
+        "image_enrichment": 124,
+        "selected": 156
       },
       "美学：艺术、创造与表达": {
         "strict": 61,
-        "image_enrichment": 74,
-        "selected": 135
+        "image_enrichment": 81,
+        "selected": 142
       },
       "认识论：学习、知识与理解": {
         "strict": 104,
-        "image_enrichment": 166,
-        "selected": 270
+        "image_enrichment": 225,
+        "selected": 329
       },
       "生命哲学：死亡、苦难与生存": {
         "strict": 5,
@@ -118,11 +118,12 @@
       }
     },
     "hss_conflict_deduplication_inherited_from": "2800-refined-v2",
+    "mm_previous_release_records_retained": 1080,
     "image_content_audit": {
-      "local_image_hash_count": 1912,
-      "unique_local_image_content_count": 1849,
-      "duplicate_image_content_group_count": 63,
-      "records_in_duplicate_image_groups": 126
+      "local_image_hash_count": 2591,
+      "unique_local_image_content_count": 2440,
+      "duplicate_image_content_group_count": 151,
+      "records_in_duplicate_image_groups": 302
     }
   },
   "known_limitations": [
@@ -133,20 +134,21 @@
     "HSSBench and MM-MoralBench image redistribution permissions should be confirmed before downstream republication."
   ],
   "quality_checks": {
-    "row_count_is_2800": true,
+    "row_count_is_3000": true,
     "ids_unique": true,
     "source_distribution_exact": true,
     "all_philosophy_checks_pass": true,
     "hl_strict_tier_valid": true,
     "hl_image_enrichment_tier_valid": true,
-    "hl_tiers_cover_all_650": true,
+    "hl_tiers_cover_all_729": true,
     "hss_normalized_prompts_unique": true,
     "mm_quota_exact": true,
+    "mm_choice_labels_complete": true,
     "vulca_l5_and_quality_ge_85": true,
     "vulca_culture_quota_exact": true,
     "all_local_image_paths_exist": true,
-    "local_image_count_is_1912": true,
-    "local_image_coverage_at_least_65_percent": true,
+    "local_image_count_is_2591": true,
+    "local_image_coverage_exceeds_80_percent": true,
     "image_source_distribution_exact": true,
     "all_local_images_have_valid_signatures": true,
     "duplicate_image_groups_identified": true,

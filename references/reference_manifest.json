@@ -99,8 +99,8 @@
   "official_links": {
     "HL Dataset": {
       "github": "https://github.com/michelecafagna26/HL-dataset",
-      "selected_records": 650,
-      "local_selected_images": 650
+      "selected_records": 729,
+      "local_selected_images": 729
     },
     "HSSBench": {
       "github": "https://github.com/Zhaolu-K/HSSBench",
@@ -111,8 +111,8 @@
       "github": "https://github.com/BeiiiY/MM-MoralBench",
       "paper": "https://arxiv.org/abs/2412.20718",
       "image_download": "https://1drv.ms/u/c/3990e975c588b26f/EYe5aG7eOhhIq4rUxdErgyoBHZBH6kBeKa-q0gRzMMq7Rg",
-      "selected_records": 1080,
-      "local_selected_images": 1080,
+      "selected_records": 1680,
+      "local_selected_images": 1680,
       "archive_file_name": "M3oral_images.zip",
       "archive_size_bytes": 949271240
     },
@@ -125,7 +125,7 @@
     "VULCA-Bench": {
       "github": "https://github.com/vulca-org/vulca-cultural-visual-benchmark",
       "paper": "https://arxiv.org/abs/2601.07986",
-      "selected_records": 888,
+      "selected_records": 409,
       "image_status": "第三方艺术图像不再分发"
     }
   }

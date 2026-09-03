@@ -15,7 +15,7 @@ from pathlib import Path
 
 OUT = Path(__file__).resolve().parents[1]
 PROJECT = OUT.parent
-RELEASE_VERSION = "2800-image-rich-v4"
+RELEASE_VERSION = "3000-image-rich-v5"
 RELEASE_DATE = "2026-09-03"
 BASE = PROJECT / "Philosophical_Multimodal_Benchmark_2800"
 BASE_RECORDS = BASE / "data" / "benchmark.jsonl"
@@ -25,26 +25,36 @@ SOURCE_JSONL = SOURCE_DIR / "philosophical_examples_5000.jsonl"
 SOURCE_BUILDER = SOURCE_DIR / "build_expanded_merge.py"
 MM_IMAGE_ARCHIVE = Path(os.environ.get("MM_MORAL_IMAGE_ARCHIVE", str(Path.home() / "Downloads" / "M3oral_images.zip")))
 RESOURCE_ROOT = PROJECT / "Benchmark_Resources_repo" / "research_benchmarks"
+MM_QUERY_FILE = RESOURCE_ROOT / "MM-MoralBench" / "repository" / "query.json"
 
 SOURCE_ORDER = {"HL Dataset": 0, "HSSBench": 1, "MM-MoralBench": 2, "VULCA-Bench": 3}
-MM_TASK_QUOTAS = {"moral_judge": 90, "moral_classification": 45, "moral_response": 45}
+MM_TASK_QUOTAS = {"moral_judge": 140, "moral_classification": 70, "moral_response": 70}
+MM_TASK_FAMILIES = {"judge": "moral_judge", "classification": "moral_classification", "response": "moral_response"}
+MM_THEMES = {
+    "Care": "伦理学：关怀与伤害",
+    "Fairness": "伦理学：公平与正义",
+    "Loyalty": "社群伦理：忠诚与背叛",
+    "Authority": "政治伦理：权威、义务与服从",
+    "Sanctity": "道德心理：神圣与纯洁",
+    "Liberty": "政治哲学：自由与压迫",
+}
 HL_THEME_QUOTAS = {
-    "伦理学：关怀、伤害与责任": 143,
-    "美学：艺术、创造与表达": 135,
-    "认识论：学习、知识与理解": 270,
+    "伦理学：关怀、伤害与责任": 156,
+    "美学：艺术、创造与表达": 142,
+    "认识论：学习、知识与理解": 329,
     "生命哲学：死亡、苦难与生存": 14,
     "政治哲学：正义、权利与自由": 63,
     "宗教哲学：信仰、仪式与超越": 25,
 }
 VULCA_CULTURE_QUOTAS = {
-    "chinese": 155,
-    "western": 274,
-    "japanese": 105,
-    "korean": 65,
-    "indian": 55,
-    "islamic": 60,
-    "hermitage": 80,
-    "mural": 94,
+    "chinese": 71,
+    "western": 126,
+    "japanese": 48,
+    "korean": 30,
+    "indian": 25,
+    "islamic": 28,
+    "hermitage": 37,
+    "mural": 44,
 }
 
 
@@ -149,13 +159,83 @@ def make_hl_record(row: dict, raw: dict, pattern, previous_id: str | None) -> di
             "previous_selection_tier": row["selection_tier"],
             "group_id": stable_hash(group_key)[:20],
             "philosophy_pass": True,
-            "selection_version": "2800-image-rich-v3",
+            "selection_version": RELEASE_VERSION,
             "hl_selection_tier": "strict" if strict else "image_enrichment",
         },
     }
 
 
-def select_records(records: list[dict], source_rows: list[dict], raw_by_merged_id: dict[str, dict]) -> tuple[list[dict], dict]:
+def make_mm_record(item: dict, previous: dict | None) -> dict:
+    if previous:
+        return deepcopy(previous)
+    family = MM_TASK_FAMILIES[item["type"]]
+    foundation = item["Foundation"]
+    return {
+        "id": f"MM-TEMP-{item['id']}",
+        "split": "train",
+        "task": {"family": family, "output_type": "choice"},
+        "input": {
+            "prompt": {"zh": None, "en": item["instruction"]},
+            "context": {"zh": None, "en": None},
+            "options": None,
+            "image": {
+                "path": None,
+                "original_reference": item["image"],
+                "availability": "将从官方 M3oral_images.zip 校验映射并提取",
+            },
+        },
+        "target": {"answer": item["gt_choice"], "type": "choice"},
+        "philosophy": {
+            "primary_theme": MM_THEMES[foundation],
+            "secondary_themes": [foundation],
+            "validation": {
+                "status": "passed",
+                "authority": "official_moral_foundation_label",
+                "criterion": "官方 Moral Foundations Theory 道德基础任务",
+                "evidence_count": 1,
+                "evidence": [foundation, item["type"]],
+                "quality_score": None,
+            },
+        },
+        "source": {
+            "benchmark": "MM-MoralBench",
+            "original_id": str(item["id"]),
+            "original_split": "all",
+            "url": "https://github.com/BeiiiY/MM-MoralBench",
+            "category": foundation,
+            "license_or_rights_note": (
+                "Official repository has no standalone LICENSE; images come from the public "
+                "M3oral_images.zip archive; confirm redistribution permission before reuse."
+            ),
+        },
+        "audit": {
+            "selected_from": "MM-MoralBench official query.json",
+            "previous_selection_tier": "官方全集扩展（v5）",
+            "group_id": stable_hash(f"MM-MoralBench|{item['image']}")[:20],
+            "philosophy_pass": True,
+            "selection_version": RELEASE_VERSION,
+        },
+    }
+
+
+def make_mm_source_snapshot(item: dict) -> dict:
+    return {
+        "merged_id": f"MM-MoralBench::{item['id']}",
+        "source_benchmark": "MM-MoralBench",
+        "source_split": "all",
+        "source_id": str(item["id"]),
+        "philosophical_theme": MM_THEMES[item["Foundation"]],
+        "secondary_themes": item["Foundation"],
+        "task_type": item["type"],
+        "category": item["Foundation"],
+        "prompt_en": item["instruction"],
+        "reference_answer": item["gt_choice"],
+        "image_original_reference": item["image"],
+        "source_url": "https://github.com/BeiiiY/MM-MoralBench",
+    }
+
+
+def select_records(records: list[dict], source_rows: list[dict], raw_by_merged_id: dict[str, dict], mm_source_records: list[dict]) -> tuple[list[dict], dict]:
     patterns = load_hl_patterns()
     previous_ids = {
         (record["source"]["benchmark"], record["source"]["original_id"]): record["id"]
@@ -189,14 +269,27 @@ def select_records(records: list[dict], source_rows: list[dict], raw_by_merged_i
             raw = raw_by_merged_id[row["merged_id"]]
             previous_id = previous_ids.get(("HL Dataset", row["source_id"]))
             hl.append(make_hl_record(row, raw, patterns[theme], previous_id))
-    assert len(hl) == 650
+    assert len(hl) == 729
 
     hss = [record for record in records if record["source"]["benchmark"] == "HSSBench"]
     assert len(hss) == 182
     assert len({normalized_prompt(record) for record in hss}) == 182
 
-    mm = [record for record in records if record["source"]["benchmark"] == "MM-MoralBench"]
-    assert len(mm) == 1080
+    previous_mm = {
+        record["source"]["original_id"]: record
+        for record in records
+        if record["source"]["benchmark"] == "MM-MoralBench"
+    }
+    mm = []
+    for foundation in MM_THEMES:
+        for raw_task, family in MM_TASK_FAMILIES.items():
+            quota = MM_TASK_QUOTAS[family]
+            pool = [item for item in mm_source_records if item["Foundation"] == foundation and item["type"] == raw_task]
+            pool.sort(key=lambda item: (0 if str(item["id"]) in previous_mm else 1, stable_hash(str(item["id"]))))
+            assert len(pool) >= quota, (foundation, raw_task, len(pool), quota)
+            mm.extend(make_mm_record(item, previous_mm.get(str(item["id"]))) for item in pool[:quota])
+    assert len(mm) == 1680
+    assert set(previous_mm).issubset({record["source"]["original_id"] for record in mm})
 
     vulca = []
     for culture, quota in VULCA_CULTURE_QUOTAS.items():
@@ -224,12 +317,16 @@ def select_records(records: list[dict], source_rows: list[dict], raw_by_merged_i
             if not progressed:
                 raise RuntimeError(f"VULCA pool exhausted for {culture}")
         vulca.extend(chosen)
-    assert len(vulca) == 888
+    assert len(vulca) == 409
 
     selected = hl + hss + mm + vulca
-    assert len(selected) == 2800
-    assert len({(record["source"]["benchmark"], record["source"]["original_id"]) for record in selected}) == 2800
-    audit = {"hl_theme_tiers": hl_audit, "hss_conflict_deduplication_inherited_from": "2800-refined-v2"}
+    assert len(selected) == 3000
+    assert len({(record["source"]["benchmark"], record["source"]["original_id"]) for record in selected}) == 3000
+    audit = {
+        "hl_theme_tiers": hl_audit,
+        "hss_conflict_deduplication_inherited_from": "2800-refined-v2",
+        "mm_previous_release_records_retained": len(previous_mm),
+    }
     return selected, audit
 
 
@@ -332,7 +429,7 @@ def prepare_records(selected: list[dict], assignments: dict[tuple[str, str], str
         for index, original in enumerate(selected, start=1):
             record = deepcopy(original)
             old_id = record["id"]
-            record_id = f"PHILBENCH-2800-{index:04d}"
+            record_id = f"PHILBENCH-3000-{index:04d}"
             source = record["source"]["benchmark"]
             key = (source, record["source"]["original_id"])
             record["id"] = record_id
@@ -450,28 +547,39 @@ def reset_output_dirs() -> None:
         target.mkdir(parents=True)
     review = OUT / "review"
     review.mkdir(parents=True, exist_ok=True)
-    generated_csv = review / "philosophical_multimodal_benchmark_2800_image_rich.csv"
-    if generated_csv.exists():
-        generated_csv.unlink()
+    for filename in (
+        "philosophical_multimodal_benchmark_2800_image_rich.csv",
+        "philosophical_multimodal_benchmark_3000_image_rich.csv",
+    ):
+        generated_csv = review / filename
+        if generated_csv.exists():
+            generated_csv.unlink()
 
 
-def write_source_snapshots(records: list[dict]) -> None:
+def write_source_snapshots(records: list[dict], mm_source_records: list[dict]) -> None:
     wanted = {(record["source"]["benchmark"], record["source"]["original_id"]): record["id"] for record in records}
-    snapshots = []
+    source_records = {}
     with SOURCE_JSONL.open(encoding="utf-8") as handle:
         for line in handle:
             item = json.loads(line)
             unified = item["unified"]
             key = (unified["source_benchmark"], unified["source_id"])
-            if key in wanted:
-                snapshots.append({
-                    "id": wanted[key],
-                    "source_benchmark": key[0],
-                    "source_id": key[1],
-                    "unified_source_record": unified,
-                    "raw_source_record": item["raw_source_record"],
-                })
-    assert len(snapshots) == 2800
+            source_records[key] = (unified, item["raw_source_record"])
+    for item in mm_source_records:
+        key = ("MM-MoralBench", str(item["id"]))
+        source_records.setdefault(key, (make_mm_source_snapshot(item), item))
+    snapshots = []
+    for key, record_id in wanted.items():
+        assert key in source_records, key
+        unified, raw = source_records[key]
+        snapshots.append({
+            "id": record_id,
+            "source_benchmark": key[0],
+            "source_id": key[1],
+            "unified_source_record": unified,
+            "raw_source_record": raw,
+        })
+    assert len(snapshots) == 3000
     snapshots.sort(key=lambda item: item["id"])
     write_jsonl(OUT / "source_snapshots" / "selected_source_records.jsonl", snapshots)
 
@@ -510,11 +618,11 @@ def copy_references() -> list[dict]:
             "size_bytes": destination.stat().st_size,
         })
     links = {
-        "HL Dataset": {"github": "https://github.com/michelecafagna26/HL-dataset", "selected_records": 650, "local_selected_images": 650},
+        "HL Dataset": {"github": "https://github.com/michelecafagna26/HL-dataset", "selected_records": 729, "local_selected_images": 729},
         "HSSBench": {"github": "https://github.com/Zhaolu-K/HSSBench", "paper": "https://arxiv.org/abs/2506.03922", "selected_records": 182},
-        "MM-MoralBench": {"github": "https://github.com/BeiiiY/MM-MoralBench", "paper": "https://arxiv.org/abs/2412.20718", "image_download": "https://1drv.ms/u/c/3990e975c588b26f/EYe5aG7eOhhIq4rUxdErgyoBHZBH6kBeKa-q0gRzMMq7Rg", "selected_records": 1080, "local_selected_images": 1080, "archive_file_name": "M3oral_images.zip", "archive_size_bytes": MM_IMAGE_ARCHIVE.stat().st_size},
+        "MM-MoralBench": {"github": "https://github.com/BeiiiY/MM-MoralBench", "paper": "https://arxiv.org/abs/2412.20718", "image_download": "https://1drv.ms/u/c/3990e975c588b26f/EYe5aG7eOhhIq4rUxdErgyoBHZBH6kBeKa-q0gRzMMq7Rg", "selected_records": 1680, "local_selected_images": 1680, "archive_file_name": "M3oral_images.zip", "archive_size_bytes": MM_IMAGE_ARCHIVE.stat().st_size},
         "ValueGround": {"github": "https://github.com/NL2G/ValueGround", "paper": "https://arxiv.org/abs/2604.06484", "selected_records": 0, "status": "论文与方法参考；截至2026-09-01官方数据尚未发布"},
-        "VULCA-Bench": {"github": "https://github.com/vulca-org/vulca-cultural-visual-benchmark", "paper": "https://arxiv.org/abs/2601.07986", "selected_records": 888, "image_status": "第三方艺术图像不再分发"},
+        "VULCA-Bench": {"github": "https://github.com/vulca-org/vulca-cultural-visual-benchmark", "paper": "https://arxiv.org/abs/2601.07986", "selected_records": 409, "image_status": "第三方艺术图像不再分发"},
     }
     payload = {"files": manifest, "official_links": links}
     (OUT / "references" / "reference_manifest.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -536,23 +644,35 @@ def validate(records: list[dict], queries: list[dict], answers: list[dict]) -> d
         header = (OUT / record["input"]["image"]["path"]).read_bytes()[:12]
         return header.startswith(b"\xff\xd8\xff") or header.startswith(b"\x89PNG\r\n\x1a\n") or header.startswith(b"GIF8") or (header.startswith(b"RIFF") and header[8:12] == b"WEBP")
     return {
-        "row_count_is_2800": len(records) == 2800,
-        "ids_unique": len(ids) == len(set(ids)) == 2800,
-        "source_distribution_exact": Counter(record["source"]["benchmark"] for record in records) == Counter({"HL Dataset": 650, "HSSBench": 182, "MM-MoralBench": 1080, "VULCA-Bench": 888}),
+        "row_count_is_3000": len(records) == 3000,
+        "ids_unique": len(ids) == len(set(ids)) == 3000,
+        "source_distribution_exact": Counter(record["source"]["benchmark"] for record in records) == Counter({"HL Dataset": 729, "HSSBench": 182, "MM-MoralBench": 1680, "VULCA-Bench": 409}),
         "all_philosophy_checks_pass": all(record["audit"]["philosophy_pass"] and record["philosophy"]["validation"]["status"] == "passed" for record in records),
         "hl_strict_tier_valid": all(record["philosophy"]["validation"]["evidence_count"] >= 2 and record["philosophy"]["validation"]["quality_score"] >= 3.5 for record in records if record["source"]["benchmark"] == "HL Dataset" and record["audit"].get("hl_selection_tier") == "strict"),
         "hl_image_enrichment_tier_valid": all(record["philosophy"]["validation"]["evidence_count"] == 1 and record["philosophy"]["validation"]["quality_score"] >= 4.5 and record["philosophy"]["validation"]["evidence"][0]["axis"] in {"action", "rationale"} for record in records if record["source"]["benchmark"] == "HL Dataset" and record["audit"].get("hl_selection_tier") == "image_enrichment"),
-        "hl_tiers_cover_all_650": Counter(record["audit"].get("hl_selection_tier") for record in records if record["source"]["benchmark"] == "HL Dataset") == Counter({"strict": 237, "image_enrichment": 413}),
+        "hl_tiers_cover_all_729": Counter(record["audit"].get("hl_selection_tier") for record in records if record["source"]["benchmark"] == "HL Dataset") == Counter({"strict": 237, "image_enrichment": 492}),
         "hss_normalized_prompts_unique": len(hss_prompts) == len(set(hss_prompts)),
         "mm_quota_exact": all(sum(1 for record in records if record["source"]["benchmark"] == "MM-MoralBench" and record["source"]["category"] == foundation and record["task"]["family"] == task) == quota for foundation in ("Care", "Fairness", "Loyalty", "Authority", "Sanctity", "Liberty") for task, quota in MM_TASK_QUOTAS.items()),
+        "mm_choice_labels_complete": all(
+            {record["target"]["answer"] for record in records if record["source"]["benchmark"] == "MM-MoralBench" and record["task"]["family"] == task} == labels
+            for task, labels in {
+                "moral_judge": {"A", "B"},
+                "moral_classification": {"A", "B", "C", "D", "E", "F", "G"},
+                "moral_response": {"A", "B"},
+            }.items()
+        ),
         "vulca_l5_and_quality_ge_85": all(record["philosophy"]["validation"]["evidence_count"] >= 1 and record["philosophy"]["validation"]["quality_score"] >= 85 for record in records if record["source"]["benchmark"] == "VULCA-Bench"),
         "vulca_culture_quota_exact": all(sum(1 for record in records if record["source"]["benchmark"] == "VULCA-Bench" and record["source"]["original_split"] == culture) == quota for culture, quota in VULCA_CULTURE_QUOTAS.items()),
         "all_local_image_paths_exist": all((OUT / record["input"]["image"]["path"]).exists() for record in records if record["input"]["image"]["path"]),
-        "local_image_count_is_1912": len(image_records) == 1912,
-        "local_image_coverage_at_least_65_percent": len(image_records) / len(records) >= 0.65,
-        "image_source_distribution_exact": Counter(record["source"]["benchmark"] for record in image_records) == Counter({"HL Dataset": 650, "HSSBench": 182, "MM-MoralBench": 1080}),
+        "local_image_count_is_2591": len(image_records) == 2591,
+        "local_image_coverage_exceeds_80_percent": len(image_records) / len(records) > 0.80,
+        "image_source_distribution_exact": Counter(record["source"]["benchmark"] for record in image_records) == Counter({"HL Dataset": 729, "HSSBench": 182, "MM-MoralBench": 1680}),
         "all_local_images_have_valid_signatures": all(valid_image_signature(record) for record in image_records),
-        "duplicate_image_groups_identified": len(duplicate_image_groups) == 63 and sum(len(items) for items in duplicate_image_groups) == 126,
+        "duplicate_image_groups_identified": all(
+            record["audit"]["group_id"] == digest[:20]
+            for digest, items in image_hash_groups.items()
+            for record in items
+        ),
         "no_duplicate_image_content_crosses_splits": all(len({record["split"] for record in items}) == 1 for items in duplicate_image_groups),
         "no_group_crosses_splits": all(len(splits) == 1 for splits in group_splits.values()),
         "query_has_no_target_field": all("target" not in query for query in queries),
@@ -589,13 +709,15 @@ def main() -> None:
     reset_output_dirs()
     base_records = read_jsonl(BASE_RECORDS)
     assert len(base_records) == 2800
+    mm_source_records = json.loads(MM_QUERY_FILE.read_text(encoding="utf-8"))
+    assert len(mm_source_records) == 4640
     with SOURCE_CSV.open(encoding="utf-8-sig", newline="") as handle:
         source_rows = list(csv.DictReader(handle))
     raw_by_merged_id = {}
     for item in read_jsonl(SOURCE_JSONL):
         raw_by_merged_id[item["unified"]["merged_id"]] = item["raw_source_record"]
     assert len(source_rows) == len(raw_by_merged_id) == 5000
-    selected, selection_audit = select_records(base_records, source_rows, raw_by_merged_id)
+    selected, selection_audit = select_records(base_records, source_rows, raw_by_merged_id, mm_source_records)
     image_content_audit = assign_content_group_ids(selected)
     selection_audit["image_content_audit"] = image_content_audit
     assignments = assign_splits(selected)
@@ -610,22 +732,22 @@ def main() -> None:
         write_jsonl(OUT / "splits" / f"{split}.jsonl", [record for record in records if record["split"] == split])
 
     flat = [flatten(record) for record in records]
-    with (OUT / "review" / "philosophical_multimodal_benchmark_2800_image_rich.csv").open("w", encoding="utf-8-sig", newline="") as handle:
+    with (OUT / "review" / "philosophical_multimodal_benchmark_3000_image_rich.csv").open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(flat[0]))
         writer.writeheader()
         writer.writerows(flat)
 
-    write_source_snapshots(records)
+    write_source_snapshots(records, mm_source_records)
     reference_files = copy_references()
 
     schema = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "title": "Philosophical Multimodal Benchmark 2800 Record",
+        "title": "Philosophical Multimodal Benchmark 3000 Record",
         "type": "object",
         "additionalProperties": False,
         "required": ["id", "split", "task", "input", "target", "philosophy", "source", "audit"],
         "properties": {
-            "id": {"type": "string", "pattern": "^PHILBENCH-2800-[0-9]{4}$"},
+            "id": {"type": "string", "pattern": "^PHILBENCH-3000-[0-9]{4}$"},
             "split": {"enum": ["train", "dev", "test"]},
             "task": {
                 "type": "object",
@@ -716,7 +838,7 @@ def main() -> None:
 
     checks = validate(records, queries, answers)
     card = {
-        "name": "Philosophical Multimodal Benchmark 2800 Image-Rich",
+        "name": "Philosophical Multimodal Benchmark 3000 Image-Rich",
         "version": RELEASE_VERSION,
         "generated_on": RELEASE_DATE,
         "record_count": len(records),
@@ -733,10 +855,10 @@ def main() -> None:
         "reference_file_count": len(reference_files),
         "previous_core_overlap": sum(record["audit"].get("previous_selection_tier", "").startswith("核心") for record in records),
         "selection_rules": {
-            "HL Dataset": "650 image-bearing records: strict tier has support >= 2 and confidence >= 3.5; image-enrichment tier has exactly one action/rationale match, confidence >= 4.5, and excludes scene-only matches",
+            "HL Dataset": "729 image-bearing records: all records satisfying either the strict tier (support >= 2 and confidence >= 3.5) or image-enrichment tier (exactly one action/rationale match, confidence >= 4.5; scene-only matches excluded)",
             "HSSBench": "official Philosophy/Ethics only; normalized duplicate prompt conflict deduplicated to the prior core/majority-answer record",
-            "MM-MoralBench": "180 per moral foundation: 90 judge, 45 classification, 45 response",
-            "VULCA-Bench": "888 official L5 records, quality_score >= 85, culture/theme stratified; artwork images not redistributed",
+            "MM-MoralBench": "280 per moral foundation from the complete official query set: 140 judge, 70 classification, 70 response; all official images locally mapped",
+            "VULCA-Bench": "409 official L5 records, quality_score >= 85, culture/theme stratified; artwork images not redistributed",
             "ValueGround": "paper/methodology reference only; no official public data available as of 2026-09-01",
         },
         "selection_audit": selection_audit,

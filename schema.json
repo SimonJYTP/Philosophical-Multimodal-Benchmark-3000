@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Philosophical Multimodal Benchmark 2800 Record",
+  "title": "Philosophical Multimodal Benchmark 3000 Record",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,7 +16,7 @@
   "properties": {
     "id": {
       "type": "string",
-      "pattern": "^PHILBENCH-2800-[0-9]{4}$"
+      "pattern": "^PHILBENCH-3000-[0-9]{4}$"
     },
     "split": {
       "enum": [
@@ -243,7 +243,7 @@
           "const": true
         },
         "selection_version": {
-          "const": "2800-image-rich-v4"
+          "const": "3000-image-rich-v5"
         }
       }
     }

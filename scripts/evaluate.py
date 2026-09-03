@@ -39,7 +39,7 @@ def ratio(numerator: int, denominator: int) -> float:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Score blind predictions for PHILBENCH-2800.")
+    parser = argparse.ArgumentParser(description="Score blind predictions for PHILBENCH-3000.")
     parser.add_argument("predictions", help="JSON/JSONL file, or '-' for stdin; rows need id and prediction")
     parser.add_argument("--split", choices=("train", "dev", "test", "all"), default="test")
     args = parser.parse_args()

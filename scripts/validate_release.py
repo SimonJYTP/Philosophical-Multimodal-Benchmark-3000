@@ -1,18 +1,28 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
+import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "2800-image-rich-v4"
+VERSION = "3000-image-rich-v5"
 EXPECTED_SOURCES = {
-    "HL Dataset": 650,
+    "HL Dataset": 729,
     "HSSBench": 182,
-    "MM-MoralBench": 1080,
-    "VULCA-Bench": 888,
+    "MM-MoralBench": 1680,
+    "VULCA-Bench": 409,
+}
+EXPECTED_TASKS = {
+    "scene_action_rationale": 729,
+    "visual_multiple_choice_qa": 182,
+    "moral_judge": 840,
+    "moral_classification": 420,
+    "moral_response": 420,
+    "philosophical_aesthetics_dimension_identification": 409,
 }
 
 
@@ -53,17 +63,28 @@ def main() -> None:
     queries = json.loads((ROOT / "data" / "query.json").read_text(encoding="utf-8"))
     answers = json.loads((ROOT / "data" / "answer_key.json").read_text(encoding="utf-8"))
     card = json.loads((ROOT / "dataset_card.json").read_text(encoding="utf-8"))
+    snapshots = read_jsonl(ROOT / "source_snapshots" / "selected_source_records.jsonl")
     json.loads((ROOT / "schema.json").read_text(encoding="utf-8"))
+    with (ROOT / "review" / "philosophical_multimodal_benchmark_3000_image_rich.csv").open(encoding="utf-8-sig", newline="") as handle:
+        review_rows = list(csv.DictReader(handle))
 
     ids = [record["id"] for record in records]
-    check(len(records) == len(queries) == len(answers) == 2800, "release files must contain 2,800 aligned rows")
+    check(len(records) == len(queries) == len(answers) == 3000, "release files must contain 3,000 aligned rows")
     check(len(ids) == len(set(ids)), "record IDs must be unique")
+    check(all(re.fullmatch(r"PHILBENCH-3000-[0-9]{4}", record_id) for record_id in ids), "record ID format is stale")
     check(Counter(record["source"]["benchmark"] for record in records) == Counter(EXPECTED_SOURCES), "source quotas changed")
+    check(Counter(record["task"]["family"] for record in records) == Counter(EXPECTED_TASKS), "task quotas changed")
     check(queries == [release_query(record) for record in records], "query.json is stale or leaks hidden metadata")
     check(
         answers == [{"id": record["id"], "split": record["split"], "target": record["target"]} for record in records],
         "answer_key.json is not exactly aligned with benchmark.jsonl",
     )
+    check(
+        [(item["id"], item["source_benchmark"], item["source_id"]) for item in snapshots]
+        == [(record["id"], record["source"]["benchmark"], record["source"]["original_id"]) for record in records],
+        "source snapshots are stale or misaligned",
+    )
+    check([row["id"] for row in review_rows] == ids, "review CSV is stale or misaligned")
 
     split_rows = {name: read_jsonl(ROOT / "splits" / f"{name}.jsonl") for name in ("train", "dev", "test")}
     for name, rows in split_rows.items():
@@ -96,8 +117,12 @@ def main() -> None:
 
         family = record["task"]["family"]
         answer = record["target"]["answer"]
-        if record["task"]["output_type"] == "choice":
-            check(answer in set("ABCDEFG"), f"invalid choice answer in {record['id']}")
+        if family in {"moral_judge", "moral_response"}:
+            check(answer in {"A", "B"}, f"invalid binary moral answer in {record['id']}")
+        elif family == "moral_classification":
+            check(answer in set("ABCDEFG"), f"invalid moral classification answer in {record['id']}")
+        elif family == "visual_multiple_choice_qa":
+            check(answer in set("ABCD"), f"invalid HSS answer in {record['id']}")
         if family == "philosophical_aesthetics_dimension_identification":
             evidence = record["philosophy"]["validation"]["evidence"]
             check(answer == "；".join(evidence), f"VULCA target/evidence mismatch in {record['id']}")
@@ -107,8 +132,10 @@ def main() -> None:
 
     check(all(len(splits) == 1 for splits in group_splits.values()), "a source/content group crosses splits")
     check(all(len(splits) == 1 for splits in image_hash_splits.values()), "duplicate image content crosses splits")
-    check(local_image_count == 1912, "local image count must be 1,912")
-    check(card["version"] == VERSION and card["record_count"] == 2800, "dataset card metadata is stale")
+    check(local_image_count == 2591, "local image count must be 2,591")
+    check(local_image_count / len(records) > 0.80, "local image coverage must exceed 80%")
+    check(card["version"] == VERSION and card["record_count"] == 3000, "dataset card metadata is stale")
+    check(card["local_image_count"] == local_image_count and card["local_image_coverage"] > 0.80, "dataset card image metrics are stale")
     check(all(card["quality_checks"].values()), "dataset card reports failed checks")
     check("�" not in json.dumps(records, ensure_ascii=False), "Unicode replacement character found")
 
