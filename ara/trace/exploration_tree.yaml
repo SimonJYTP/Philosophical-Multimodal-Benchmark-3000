@@ -1,0 +1,45 @@
+tree:
+  - id: N01
+    type: question
+    title: "Expand the philosophical multimodal benchmark to 3,000 records"
+    provenance: user
+    timestamp: "2026-09-03T19:18+08:00"
+    description: >
+      Increase the release to exactly 3,000 records, make image coverage exceed
+      80%, improve suitability for multimodal evaluation, fix bugs, and publish it.
+    children:
+      - id: N02
+        type: experiment
+        title: "Audit eligible visual-source capacity"
+        provenance: ai-executed
+        timestamp: "2026-09-03T19:18+08:00"
+        result: >
+          Existing HL rules support 729 image-bearing records. The complete official
+          MM-MoralBench query set contains 4,640 records whose image references are
+          all present in the official archive, enabling balanced expansion.
+        evidence: [C01, C03]
+        children:
+          - id: N03
+            type: decision
+            title: "Adopt a 729/182/1680/409 source composition"
+            provenance: ai-suggested
+            timestamp: "2026-09-03T19:18+08:00"
+            choice: >
+              Use 729 HL, 182 HSSBench, 1,680 MM-MoralBench, and 409 VULCA records,
+              producing 2,591 image-bearing records without relaxing quality rules.
+            alternatives:
+              - "Lower HL evidence thresholds to retain more samples"
+              - "Attach unrelated or synthetic images to text-only records"
+            evidence: "Capacity audit in N02 and the user's >80% requirement"
+            children:
+              - id: N04
+                type: experiment
+                title: "Build and independently validate release v5"
+                provenance: ai-executed
+                timestamp: "2026-09-03T19:18+08:00"
+                result: >
+                  Built 3,000 aligned records with 2,591 local images (86.3667%),
+                  2,440 unique image contents, and no content group crossing splits.
+                  Schema validation, deterministic rebuild, release validation, and
+                  perfect-gold evaluator replay all passed.
+                evidence: [C01, C02, C03, "evidence/tables/2026-09-03_release_validation.md"]

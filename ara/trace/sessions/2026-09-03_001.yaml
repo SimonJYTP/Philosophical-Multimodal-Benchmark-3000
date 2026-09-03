@@ -1,0 +1,65 @@
+session:
+  id: "2026-09-03_001"
+  timestamp: "2026-09-03T19:18+08:00"
+  summary: "Expanded and validated the image-rich benchmark as a 3,000-record v5 release."
+
+events_logged:
+  - type: decision
+    id: N03
+    provenance: ai-suggested
+    summary: "Selected the 729/182/1680/409 composition to reach 86.3667% genuine image coverage."
+  - type: experiment
+    id: N02
+    provenance: ai-executed
+    summary: "Audited HL and official MM-MoralBench capacity."
+  - type: experiment
+    id: N04
+    provenance: ai-executed
+    summary: "Built, schema-validated, content-audited, and evaluator-tested release v5."
+  - type: claim
+    id: C01
+    provenance: ai-suggested
+    summary: "The v5 release contains 3,000 records and exceeds 80% local-image coverage."
+  - type: claim
+    id: C02
+    provenance: ai-suggested
+    summary: "Duplicate visual content does not cross splits."
+  - type: claim
+    id: C03
+    provenance: ai-suggested
+    summary: "MM-MoralBench foundation-task strata match the declared quotas."
+  - type: heuristic
+    id: H01
+    provenance: ai-suggested
+    summary: "Increase coverage through eligible official visual sources rather than filler images."
+  - type: heuristic
+    id: H02
+    provenance: ai-suggested
+    summary: "Use content hashes for split isolation."
+
+ai_actions:
+  - action: "Updated the builder, schema, validator, evaluator, dataset card, README, and generated release artifacts."
+    provenance: ai-executed
+    files_changed: ["scripts/build_dataset.py", "scripts/validate_release.py", "scripts/evaluate.py", "schema.json", "dataset_card.json", "README.md"]
+  - action: "Materialized 2,591 source-mapped local images and aligned data, split, snapshot, and review CSV files."
+    provenance: ai-executed
+    files_changed: ["images/", "data/", "splits/", "source_snapshots/", "review/"]
+
+claims_touched:
+  - id: C01
+    action: created
+    provenance: ai-suggested
+  - id: C02
+    action: created
+    provenance: ai-suggested
+  - id: C03
+    action: created
+    provenance: ai-suggested
+
+open_threads:
+  - "Run and report model baselines using the blind query/evaluator workflow."
+  - "Conduct expert review and inter-annotator agreement analysis for the HL enrichment tier."
+  - "Confirm HSSBench and MM-MoralBench image redistribution permissions."
+
+ai_suggestions_pending:
+  - "Report strict-tier and full-tier HL results separately in the manuscript."

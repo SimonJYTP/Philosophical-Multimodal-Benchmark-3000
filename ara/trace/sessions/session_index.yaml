@@ -1,0 +1,5 @@
+sessions:
+  - id: "2026-09-03_001"
+    file: "2026-09-03_001.yaml"
+    timestamp: "2026-09-03T19:18+08:00"
+    summary: "Expanded and validated the image-rich benchmark as a 3,000-record v5 release."
