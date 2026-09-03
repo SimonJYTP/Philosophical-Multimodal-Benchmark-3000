@@ -1,7 +1,7 @@
 {
   "name": "Philosophical Multimodal Benchmark 2800 Image-Rich",
-  "version": "2800-image-rich-v3",
-  "generated_on": "2026-09-02",
+  "version": "2800-image-rich-v4",
+  "generated_on": "2026-09-03",
   "record_count": 2800,
   "source_distribution": {
     "HL Dataset": 650,
@@ -125,6 +125,13 @@
       "records_in_duplicate_image_groups": 126
     }
   },
+  "known_limitations": [
+    "VULCA-Bench records are text-only proxies in this release because third-party artwork images are not redistributed.",
+    "HL free-text rationales require human or separately specified semantic evaluation; exact match is not a valid primary metric.",
+    "No new inter-annotator agreement statistic is included; HL enrichment labels still require expert audit.",
+    "No model baseline results are bundled; evaluate.py defines scoring but does not substitute for experiments.",
+    "HSSBench and MM-MoralBench image redistribution permissions should be confirmed before downstream republication."
+  ],
   "quality_checks": {
     "row_count_is_2800": true,
     "ids_unique": true,
@@ -146,10 +153,15 @@
     "no_duplicate_image_content_crosses_splits": true,
     "no_group_crosses_splits": true,
     "query_has_no_target_field": true,
-    "answer_key_matches_ids": true,
+    "query_contains_only_inference_fields": true,
+    "query_hides_local_source_filenames": true,
+    "queries_match_release_records": true,
+    "answer_key_matches_records": true,
     "content_hashes_unique": true,
     "targets_nonempty": true,
+    "vulca_targets_are_l5_only": true,
     "vulca_labels_removed_from_input": true,
+    "mm_context_does_not_claim_images_are_missing": true,
     "no_unicode_replacement_character": true
   }
 }

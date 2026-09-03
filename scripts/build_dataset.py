@@ -15,6 +15,8 @@ from pathlib import Path
 
 OUT = Path(__file__).resolve().parents[1]
 PROJECT = OUT.parent
+RELEASE_VERSION = "2800-image-rich-v4"
+RELEASE_DATE = "2026-09-03"
 BASE = PROJECT / "Philosophical_Multimodal_Benchmark_2800"
 BASE_RECORDS = BASE / "data" / "benchmark.jsonl"
 SOURCE_DIR = PROJECT / "outputs" / "philosophical_benchmark_merge_5000_20260902"
@@ -357,12 +359,18 @@ def prepare_records(selected: list[dict], assignments: dict[tuple[str, str], str
                     shutil.copyfileobj(source_handle, destination_handle)
                 record["input"]["image"]["path"] = destination.relative_to(OUT).as_posix()
                 record["input"]["image"]["availability"] = "本地图像已从官方 M3oral_images.zip 校验映射并提取"
+                record["input"]["context"] = {"zh": None, "en": None}
+                record["source"]["license_or_rights_note"] = (
+                    "Official repository has no standalone LICENSE; images come from the public "
+                    "M3oral_images.zip archive; confirm redistribution permission before reuse."
+                )
 
             if source == "VULCA-Bench":
                 record["philosophy"]["validation"]["criterion"] = "官方 L5 Philosophical Aesthetics 维度且质量分不低于85"
+                record["target"]["answer"] = "；".join(record["philosophy"]["validation"]["evidence"])
 
             record["audit"]["derived_from_record_id"] = old_id if old_id.startswith("PHILBENCH-") else None
-            record["audit"]["selection_version"] = "2800-image-rich-v3"
+            record["audit"]["selection_version"] = RELEASE_VERSION
             query_basis = json.dumps(
                 {"task": record["task"], "input": record["input"], "philosophy": record["philosophy"]},
                 ensure_ascii=False,
@@ -411,6 +419,25 @@ def flatten(record: dict) -> dict:
         "source_url": record["source"]["url"],
         "rights_note": record["source"]["license_or_rights_note"],
         "content_hash": record["audit"]["content_hash"],
+    }
+
+
+def build_query(record: dict) -> dict:
+    """构造盲测输入：仅保留作答所需字段，剔除可泄漏答案的元数据。
+
+    泄漏源：philosophy.primary_theme / source.category 直接等于部分任务（如
+    MM-MoralBench 的 moral_classification）的正确答案；audit 含内部选择痕迹。
+    因此盲测 query 只保留 id/split/task/input，并移除有本地图片时的
+    original_reference（原始文件名可能映射到来源/答案）。
+    """
+    image = dict(record["input"]["image"])
+    if image.get("path"):
+        image.pop("original_reference", None)
+    return {
+        "id": record["id"],
+        "split": record["split"],
+        "task": record["task"],
+        "input": {**record["input"], "image": image},
     }
 
 
@@ -529,10 +556,31 @@ def validate(records: list[dict], queries: list[dict], answers: list[dict]) -> d
         "no_duplicate_image_content_crosses_splits": all(len({record["split"] for record in items}) == 1 for items in duplicate_image_groups),
         "no_group_crosses_splits": all(len(splits) == 1 for splits in group_splits.values()),
         "query_has_no_target_field": all("target" not in query for query in queries),
-        "answer_key_matches_ids": {item["id"] for item in answers} == set(ids),
+        "query_contains_only_inference_fields": all(set(query) == {"id", "split", "task", "input"} for query in queries),
+        "query_hides_local_source_filenames": all(
+            "original_reference" not in query["input"]["image"]
+            for query in queries
+            if query["input"]["image"].get("path")
+        ),
+        "queries_match_release_records": queries == [build_query(record) for record in records],
+        "answer_key_matches_records": answers == [
+            {"id": record["id"], "split": record["split"], "target": record["target"]}
+            for record in records
+        ],
         "content_hashes_unique": len({record["audit"]["content_hash"] for record in records}) == len(records),
         "targets_nonempty": all(str(record["target"]["answer"]).strip() for record in records),
+        "vulca_targets_are_l5_only": all(
+            record["target"]["answer"] == "；".join(record["philosophy"]["validation"]["evidence"])
+            and all("_L5_" in label for label in record["target"]["answer"].split("；"))
+            for record in records
+            if record["source"]["benchmark"] == "VULCA-Bench"
+        ),
         "vulca_labels_removed_from_input": all(not any(label in json.dumps(record["input"], ensure_ascii=False) for label in record["philosophy"]["validation"]["evidence"]) for record in records if record["source"]["benchmark"] == "VULCA-Bench"),
+        "mm_context_does_not_claim_images_are_missing": all(
+            "unavailable" not in json.dumps(record["input"]["context"], ensure_ascii=False).lower()
+            for record in records
+            if record["source"]["benchmark"] == "MM-MoralBench"
+        ),
         "no_unicode_replacement_character": all("�" not in json.dumps(record, ensure_ascii=False) for record in records),
     }
 
@@ -554,7 +602,7 @@ def main() -> None:
     records = prepare_records(selected, assignments)
 
     write_jsonl(OUT / "data" / "benchmark.jsonl", records)
-    queries = [{key: value for key, value in record.items() if key != "target"} for record in records]
+    queries = [build_query(record) for record in records]
     answers = [{"id": record["id"], "split": record["split"], "target": record["target"]} for record in records]
     (OUT / "data" / "query.json").write_text(json.dumps(queries, ensure_ascii=False, indent=2), encoding="utf-8")
     (OUT / "data" / "answer_key.json").write_text(json.dumps(answers, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -574,16 +622,94 @@ def main() -> None:
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "title": "Philosophical Multimodal Benchmark 2800 Record",
         "type": "object",
+        "additionalProperties": False,
         "required": ["id", "split", "task", "input", "target", "philosophy", "source", "audit"],
         "properties": {
             "id": {"type": "string", "pattern": "^PHILBENCH-2800-[0-9]{4}$"},
             "split": {"enum": ["train", "dev", "test"]},
-            "task": {"type": "object", "required": ["family", "output_type"]},
-            "input": {"type": "object", "required": ["prompt", "context", "options", "image"]},
-            "target": {"type": "object", "required": ["answer", "type"]},
-            "philosophy": {"type": "object", "required": ["primary_theme", "validation"]},
-            "source": {"type": "object", "required": ["benchmark", "original_id", "url"]},
-            "audit": {"type": "object", "required": ["group_id", "content_hash", "philosophy_pass", "selection_version"]},
+            "task": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["family", "output_type"],
+                "properties": {
+                    "family": {"type": "string", "minLength": 1},
+                    "output_type": {"enum": ["choice", "dimension_labels", "free_text_rationale"]},
+                },
+            },
+            "input": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["prompt", "context", "options", "image"],
+                "properties": {
+                    "prompt": {"type": "object", "minProperties": 1},
+                    "context": {"type": "object", "required": ["zh", "en"]},
+                    "options": {"type": ["object", "null"]},
+                    "image": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["path", "original_reference", "availability"],
+                        "properties": {
+                            "path": {"type": ["string", "null"]},
+                            "original_reference": {"type": ["string", "null"]},
+                            "availability": {"type": "string"},
+                        },
+                    },
+                },
+            },
+            "target": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["answer", "type"],
+                "properties": {
+                    "answer": {"type": "string", "minLength": 1},
+                    "type": {"enum": ["choice", "dimension_labels", "free_text_rationale"]},
+                },
+            },
+            "philosophy": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["primary_theme", "secondary_themes", "validation"],
+                "properties": {
+                    "primary_theme": {"type": "string", "minLength": 1},
+                    "secondary_themes": {"type": "array", "items": {"type": "string"}},
+                    "validation": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["status", "authority", "criterion", "evidence_count", "evidence", "quality_score"],
+                        "properties": {
+                            "status": {"const": "passed"},
+                            "authority": {"type": "string", "minLength": 1},
+                            "criterion": {"type": "string", "minLength": 1},
+                            "evidence_count": {"type": "integer", "minimum": 1},
+                            "evidence": {"type": "array", "minItems": 1},
+                            "quality_score": {"type": ["number", "null"]},
+                        },
+                    },
+                },
+            },
+            "source": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["benchmark", "original_id", "original_split", "url", "category", "license_or_rights_note"],
+                "properties": {
+                    "benchmark": {"enum": ["HL Dataset", "HSSBench", "MM-MoralBench", "VULCA-Bench"]},
+                    "original_id": {"type": "string", "minLength": 1},
+                    "original_split": {"type": "string"},
+                    "url": {"type": "string", "pattern": "^https://"},
+                    "category": {"type": "string"},
+                    "license_or_rights_note": {"type": "string", "minLength": 1},
+                },
+            },
+            "audit": {
+                "type": "object",
+                "required": ["group_id", "content_hash", "philosophy_pass", "selection_version"],
+                "properties": {
+                    "group_id": {"type": "string", "minLength": 1},
+                    "content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                    "philosophy_pass": {"const": True},
+                    "selection_version": {"const": RELEASE_VERSION},
+                },
+            },
         },
     }
     (OUT / "schema.json").write_text(json.dumps(schema, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -591,8 +717,8 @@ def main() -> None:
     checks = validate(records, queries, answers)
     card = {
         "name": "Philosophical Multimodal Benchmark 2800 Image-Rich",
-        "version": "2800-image-rich-v3",
-        "generated_on": "2026-09-02",
+        "version": RELEASE_VERSION,
+        "generated_on": RELEASE_DATE,
         "record_count": len(records),
         "source_distribution": Counter(record["source"]["benchmark"] for record in records),
         "split_distribution": Counter(record["split"] for record in records),
@@ -614,6 +740,13 @@ def main() -> None:
             "ValueGround": "paper/methodology reference only; no official public data available as of 2026-09-01",
         },
         "selection_audit": selection_audit,
+        "known_limitations": [
+            "VULCA-Bench records are text-only proxies in this release because third-party artwork images are not redistributed.",
+            "HL free-text rationales require human or separately specified semantic evaluation; exact match is not a valid primary metric.",
+            "No new inter-annotator agreement statistic is included; HL enrichment labels still require expert audit.",
+            "No model baseline results are bundled; evaluate.py defines scoring but does not substitute for experiments.",
+            "HSSBench and MM-MoralBench image redistribution permissions should be confirmed before downstream republication.",
+        ],
         "quality_checks": checks,
     }
     (OUT / "dataset_card.json").write_text(json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -1,8 +1,10 @@
-# Philosophical Multimodal Benchmark 2800 — Image-Rich
+# Philosophical Multimodal Benchmark 2800 — Image-Rich (v4)
 
 这是面向“哲学意味多模态理解”研究的图像增强版数据集，共 **2,800 条**，其中 **1,912 条具有可直接读取的本地图片，覆盖率 68.29%**，达到不少于 65% 的目标。
 
 本版不是简单地为文本记录配任意图片，而是使用各 benchmark 的原始图片映射：HL 与 HSS 使用原数据图片，MM-MoralBench 使用作者公开的 `M3oral_images.zip`，VULCA 因第三方艺术图像权利限制仍只保留来源引用。
+
+v4 修复了三项会影响有效性的发布问题：盲测输入不再携带答案相关元数据；VULCA 目标严格限定为提示所要求的 L5 标签；MM-MoralBench 不再保留“本地无图像”的过期上下文。该版本另提供独立发布验证器和可复现的分类/多标签评分脚本。
 
 ## 1. 数据构成
 
@@ -11,7 +13,7 @@
 | HL Dataset | 650 | 650 | 100% | 场景、行动和理由中的责任、认知、审美、宗教及生命处境理解 |
 | HSSBench | 182 | 182 | 100% | 官方 Philosophy/Ethics 视觉选择题与多语言推理 |
 | MM-MoralBench | 1,080 | 1,080 | 100% | 六类道德基础上的判断、分类和回应 |
-| VULCA-Bench | 888 | 0 | 0% | 多文化艺术评论中的 L5 哲学美学维度识别 |
+| VULCA-Bench | 888 | 0 | 0% | 多文化艺术评论中的 L5 哲学美学维度识别（本版为文本代理任务） |
 | ValueGround | 0 | 0 | — | 论文和方法参考；官方数据尚未公开 |
 | **合计** | **2,800** | **1,912** | **68.29%** |  |
 
@@ -76,7 +78,9 @@ Philosophical_Multimodal_Benchmark_2800_ImageRich/
 │  └─ philosophical_multimodal_benchmark_2800_image_rich_review.xlsx
 ├─ references/                       # 论文、官方说明、BibTeX 和权利材料
 └─ scripts/
-   └─ build_dataset.py
+   ├─ build_dataset.py
+   ├─ validate_release.py
+   └─ evaluate.py
 ```
 
 ## 4. 记录格式
@@ -127,7 +131,7 @@ Philosophical_Multimodal_Benchmark_2800_ImageRich/
     "group_id": "...",
     "content_hash": "...",
     "philosophy_pass": true,
-    "selection_version": "2800-image-rich-v3"
+    "selection_version": "2800-image-rich-v4"
   }
 }
 ```
@@ -159,7 +163,7 @@ assert image_path.exists()
 2. 保存 `{"id": "...", "prediction": "..."}` 格式的预测。
 3. 推理结束后使用 `data/answer_key.json` 按 ID 对齐评分。
 
-不要在推理阶段加载 `benchmark.jsonl` 或 `answer_key.json`，避免答案泄漏。
+`query.json` 顶层严格只保留 `id`、`split`、`task`、`input`；`philosophy`、`source`、`audit` 和本地图像的原始文件名均已移除。不要在推理阶段加载 `benchmark.jsonl` 或 `answer_key.json`，避免答案泄漏。
 
 ### 5.3 按严格程度使用 HL
 
@@ -184,10 +188,27 @@ assert len(hl_enrichment) == 413
 
 ## 6. 推荐评测指标
 
+| 任务族 | 输入 | 输出 | 主指标 |
+|---|---|---|---|
+| `scene_action_rationale` | 图像 + Scene/Action/Object 上下文 | 自由文本 Rationale | 人工量表 + 预先声明的语义指标 |
+| `visual_multiple_choice_qa` | 图像 + 多语言题干与选项 | A–D | Accuracy |
+| `moral_judge` | 图像 + 道德判断题干 | A/B | Accuracy |
+| `moral_classification` | 图像 + 六类道德基础选项 | A–G | Accuracy |
+| `moral_response` | 含文字的图像 + 回应选择题干 | A/B | Accuracy |
+| `philosophical_aesthetics_dimension_identification` | 艺术评论文本（本版无本地图像） | L5 标签集合 | Micro-F1、Macro-F1、Exact Match |
+
 - HSSBench 与 MM-MoralBench：Accuracy，并分别按任务与道德基础报告。
 - VULCA-Bench：标签集合的 Micro-F1、Macro-F1 和 Exact Match。
 - HL Dataset：人工量表（相关性、因果合理性、哲学关联、幻觉）结合语义相似度；不建议只使用字面 Exact Match。
 - 跨来源：先报告各来源指标，再进行明确归一化后的等权宏平均，不要把异质任务直接混成一个 Accuracy。
+
+对选择题与 VULCA L5 多标签任务，可直接运行：
+
+```powershell
+py -3 .\scripts\evaluate.py .\predictions.jsonl --split test
+```
+
+脚本报告各选择题任务的 Accuracy，以及 VULCA 的 Micro-F1、Macro-F1 和 Exact Match；HL 自由文本任务会明确列为需另行进行语义/人工评分，不会用不恰当的字面匹配混入总分。预测文件必须与所选划分的 ID 完全一致。
 
 ## 7. 重新构建
 
@@ -205,6 +226,12 @@ py -3 .\scripts\build_dataset.py
 ```
 
 脚本会刷新数据、图片、来源快照、CSV 和参考材料，并执行全部质量断言。现有 Excel 审阅表作为静态快照会被保留；修改筛选逻辑后应从新 CSV 重新生成。
+
+克隆发布仓库后无需原始源目录即可执行完整性验证：
+
+```powershell
+py -3 .\scripts\validate_release.py
+```
 
 ## 8. 图片与许可边界
 
@@ -228,11 +255,17 @@ py -3 .\scripts\build_dataset.py
 - 1,912 个本地路径存在、图片来源分布正确、图片文件头有效；
 - 1,912 个图像文件对应 1,849 个唯一图像内容，63 组复用图片均未跨越数据划分；
 - 图片覆盖率 ≥65%；
-- 划分组隔离、查询无答案、答案 ID 对齐；
-- VULCA 输入不包含目标 L5 标签；
+- 划分组隔离、查询与完整记录严格对应、答案逐条精确对齐；
+- 盲测查询不含答案相关元数据或本地原始文件名；
+- VULCA 目标仅含 L5 标签且输入不包含目标标签；
+- MM-MoralBench 上下文与本地图像可用状态一致；
 - 无 Unicode 替换字符。
 
 自动规则不能替代哲学专家复核。尤其是 HL 图像增强层，建议在论文定稿前进行分层随机抽样人工复核，并在方法部分明确其筛选规则。
+
+VULCA 的 888 条记录由于第三方艺术图像权利边界，在此发布中只能按艺术评论执行文本代理评测，不能计入“具有本地视觉输入”的样本量。HSSBench 与 MM-MoralBench 的上游仓库没有独立 LICENSE；公开再分发前仍应取得权利方确认。仓库因此不附加一个覆盖全部内容的统一数据许可证。
+
+就工程发布而言，v4 已可重复验证和评分；就论文发表而言，仍需补充新的专家复核/标注一致性统计、明确 HL 自由文本量表与评审流程，并实际运行基线模型形成定量结果表。仓库不会把尚未完成的实验伪装成基线结果。
 
 ## 10. 原始项目
 
